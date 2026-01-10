@@ -10,7 +10,11 @@ const app = express();
 /* =====================
    Middleware
 ===================== */
-app.use(cors());
+app.use(cors({
+   origin: "https://hackathon9744-create.github.io",
+   methods: ["GET","POST","PUT","DELETE"],
+   credentials: true
+}));
 app.use(express.json());
 app.use(express.static("frontend"));
 
@@ -162,4 +166,5 @@ io.on("connection", socket => {
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🔥 Server running on http://localhost:${PORT}`);
+
 });
