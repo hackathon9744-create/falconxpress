@@ -1,22 +1,26 @@
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
+const mongoose = require("mongoose");
+const cors = require("cors");
 const { Server } = require("socket.io");
 
-const mongoose = require("mongoose");
+/* =====================
+   FIX: fetch for Node
+===================== */
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const app = express();
 
 /* =====================
    Middleware
 ===================== */
-const cors = require("cors");
-
 app.use(
   cors({
     origin: [
-      "https://falconxpress-1.onrender.com", // frontend (static site)
-      "http://localhost:5500",               // local frontend (optional)
+      "https://falconxpress-1.onrender.com", // Render frontend
+      "http://localhost:5500",
       "http://localhost:3000"
     ],
     credentials: true,
@@ -24,9 +28,8 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
-app.options("*", cors());
+
 app.use(express.json());
-app.use(express.static("frontend"));
 
 /* =====================
    Routes
@@ -50,9 +53,10 @@ mongoose
    HTTP + Socket.IO
 ===================== */
 const server = http.createServer(app);
+
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "https://falconxpress-1.onrender.com",
     methods: ["GET", "POST"]
   }
 });
@@ -64,11 +68,13 @@ async function getOSRMRoute(start, end) {
   const url = `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`;
   const res = await fetch(url);
   const data = await res.json();
-  if (!data.routes?.length) return null;
+
+  if (!data.routes || !data.routes.length) return null;
+
   return {
     distance: data.routes[0].distance,
     duration: data.routes[0].duration,
-    geometry: data.routes[0].geometry.coordinates,
+    geometry: data.routes[0].geometry.coordinates
   };
 }
 
@@ -80,7 +86,9 @@ const liveDrivers = {};
 /* =====================
    Health Check
 ===================== */
-app.get("/", (_, res) => res.send("🚀 LogiSync Backend Running"));
+app.get("/", (_, res) => {
+  res.send("🚀 LogiSync Backend Running on Render");
+});
 
 /* =====================
    SOCKET.IO
@@ -88,7 +96,6 @@ app.get("/", (_, res) => res.send("🚀 LogiSync Backend Running"));
 io.on("connection", socket => {
   console.log("🟢 Client connected:", socket.id);
 
-  /* ---------- DRIVER ONLINE ---------- */
   socket.on("driver:online", ({ driverId, vehicleType }) => {
     liveDrivers[driverId] = {
       driverId,
@@ -105,12 +112,10 @@ io.on("connection", socket => {
     });
   });
 
-  /* ---------- DRIVER LOCATION ---------- */
   socket.on("driver:location", async data => {
     const prev = liveDrivers[data.driverId];
     let speed = data.speed || 0;
 
-    // fallback speed calculation
     if (!speed && prev?.lat) {
       const dist = Math.hypot(data.lat - prev.lat, data.lng - prev.lng);
       speed = Math.round(dist * 111000 * 3.6);
@@ -132,15 +137,13 @@ io.on("connection", socket => {
       heading: data.heading || 0,
       status: speed < 2 ? "idle" : "active",
       route,
-      updatedAt: Date.now(),
+      updatedAt: Date.now()
     };
 
     io.emit("fleet:update", liveDrivers[data.driverId]);
   });
 
-  /* ---------- DRIVER SOS ---------- */
   socket.on("driver:sos", data => {
-    console.log("🚨 SOS:", data.driverId);
     io.emit("driver:sos", {
       driverId: data.driverId,
       lat: data.lat,
@@ -150,7 +153,6 @@ io.on("connection", socket => {
     });
   });
 
-  /* ---------- DRIVER OFFLINE ---------- */
   socket.on("driver:offline", ({ driverId }) => {
     delete liveDrivers[driverId];
     io.emit("driver:status:update", {
@@ -159,7 +161,6 @@ io.on("connection", socket => {
     });
   });
 
-  /* ---------- SOCKET DISCONNECT ---------- */
   socket.on("disconnect", () => {
     for (const id in liveDrivers) {
       if (liveDrivers[id].socketId === socket.id) {
@@ -183,4 +184,3 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🔥 Server running on port ${PORT}`);
 });
-
