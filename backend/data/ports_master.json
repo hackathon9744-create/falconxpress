@@ -1,0 +1,122 @@
+[
+{
+"portId": "PORT-IN-MUN-01",
+"name": "Mundra Port",
+"city": "Mundra",
+"state": "Gujarat",
+"lat": 22.7500,
+"lng": 69.7000
+},
+{
+"portId": "PORT-IN-KDL-01",
+"name": "Deendayal Port (Kandla)",
+"city": "Kandla",
+"state": "Gujarat",
+"lat": 23.0100,
+"lng": 70.2167
+},
+{
+"portId": "PORT-IN-BOM-01",
+"name": "Mumbai Port",
+"city": "Mumbai",
+"state": "Maharashtra",
+"lat": 18.9499,
+"lng": 72.9497
+},
+{
+"portId": "PORT-IN-JNP-01",
+"name": "Jawaharlal Nehru Port (Nhava Sheva)",
+"city": "Navi Mumbai",
+"state": "Maharashtra",
+"lat": 18.9500,
+"lng": 72.9500
+},
+{
+"portId": "PORT-IN-MRM-01",
+"name": "Mormugao Port",
+"city": "Mormugao",
+"state": "Goa",
+"lat": 15.4167,
+"lng": 73.8000
+},
+{
+"portId": "PORT-IN-NML-01",
+"name": "New Mangalore Port",
+"city": "Mangaluru",
+"state": "Karnataka",
+"lat": 12.9167,
+"lng": 74.8167
+},
+{
+"portId": "PORT-IN-COK-01",
+"name": "Cochin Port",
+"city": "Kochi",
+"state": "Kerala",
+"lat": 9.9667,
+"lng": 76.2667
+},
+{
+"portId": "PORT-IN-TUT-01",
+"name": "V.O. Chidambaranar Port (Tuticorin)",
+"city": "Thoothukudi",
+"state": "Tamil Nadu",
+"lat": 8.7500,
+"lng": 78.1833
+},
+{
+"portId": "PORT-IN-MAA-01",
+"name": "Chennai Port",
+"city": "Chennai",
+"state": "Tamil Nadu",
+"lat": 13.0820,
+"lng": 80.2920
+},
+{
+"portId": "PORT-IN-ENR-01",
+"name": "Kamarajar Port (Ennore)",
+"city": "Ennore",
+"state": "Tamil Nadu",
+"lat": 13.2529,
+"lng": 80.3267
+},
+{
+"portId": "PORT-IN-KPN-01",
+"name": "Krishnapatnam Port",
+"city": "Nellore",
+"state": "Andhra Pradesh",
+"lat": 14.2500,
+"lng": 80.1167
+},
+{
+"portId": "PORT-IN-VTZ-01",
+"name": "Visakhapatnam Port",
+"city": "Visakhapatnam",
+"state": "Andhra Pradesh",
+"lat": 17.6833,
+"lng": 83.2167
+},
+{
+"portId": "PORT-IN-PRP-01",
+"name": "Paradip Port",
+"city": "Paradip",
+"state": "Odisha",
+"lat": 20.2667,
+"lng": 86.6667
+},
+{
+"portId": "PORT-IN-HLD-01",
+"name": "Haldia Dock Complex",
+"city": "Haldia",
+"state": "West Bengal",
+"lat": 22.0333,
+"lng": 88.0667
+},
+{
+"portId": "PORT-IN-CCU-01",
+"name": "Syama Prasad Mookerjee Port (Kolkata)",
+"city": "Kolkata",
+"state": "West Bengal",
+"lat": 22.5480,
+"lng": 88.3180
+}
+]

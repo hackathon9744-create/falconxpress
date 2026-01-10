@@ -1,0 +1,232 @@
+[
+  {
+    "warehouseId": "IND-GUR-LU3",
+    "name": "IndoSpace Luhari III",
+    "city": "Gurgaon",
+    "state": "Haryana",
+    "cluster": "Northern",
+    "type": "Distribution Hub",
+    "lat": 28.3244,
+    "lng": 76.7621
+  },
+  {
+    "warehouseId": "IND-FAR-01",
+    "name": "IndoSpace Farukhnagar",
+    "city": "Farukhnagar",
+    "state": "Haryana",
+    "cluster": "Northern",
+    "type": "Logistics Park",
+    "lat": 28.4552,
+    "lng": 76.8152
+  },
+  {
+    "warehouseId": "AMZ-DEL5",
+    "name": "Amazon FC DEL5",
+    "city": "Manesar",
+    "state": "Haryana",
+    "cluster": "Northern",
+    "type": "Fulfillment Center",
+    "lat": 28.3500,
+    "lng": 76.9200
+  },
+  {
+    "warehouseId": "FLP-SAN-01",
+    "name": "Flipkart Sanpka FC",
+    "city": "Farukhnagar",
+    "state": "Haryana",
+    "cluster": "Northern",
+    "type": "Fulfillment Center",
+    "lat": 28.4500,
+    "lng": 76.8100
+  },
+  {
+    "warehouseId": "ESR-RAJ-01",
+    "name": "ESR Rajpura",
+    "city": "Rajpura",
+    "state": "Punjab",
+    "cluster": "Northern",
+    "type": "Freight Hub",
+    "lat": 30.4847,
+    "lng": 76.5936
+  },
+  {
+    "warehouseId": "CWC-TKD-01",
+    "name": "ICD Tughlakabad",
+    "city": "New Delhi",
+    "state": "Delhi",
+    "cluster": "Northern",
+    "type": "Inland Container Depot",
+    "lat": 28.5130,
+    "lng": 77.2692
+  },
+  {
+    "warehouseId": "IND-BAD-01",
+    "name": "IndoSpace Badli",
+    "city": "Jhajjar",
+    "state": "Haryana",
+    "cluster": "Northern",
+    "type": "Logistics Park",
+    "lat": 28.5500,
+    "lng": 76.8100
+  },
+  {
+    "warehouseId": "IND-CHK-V",
+    "name": "IndoSpace Chakan V",
+    "city": "Pune",
+    "state": "Maharashtra",
+    "cluster": "Western",
+    "type": "Industrial Hub",
+    "lat": 18.7521,
+    "lng": 73.8550
+  },
+  {
+    "warehouseId": "AMZ-BOM7",
+    "name": "Amazon FC BOM7",
+    "city": "Bhiwandi",
+    "state": "Maharashtra",
+    "cluster": "Western",
+    "type": "Fulfillment Center",
+    "lat": 19.2900,
+    "lng": 73.0600
+  },
+  {
+    "warehouseId": "ESR-BHI-01",
+    "name": "ESR Bhiwandi",
+    "city": "Bhiwandi",
+    "state": "Maharashtra",
+    "cluster": "Western",
+    "type": "Distribution Hub",
+    "lat": 19.2967,
+    "lng": 73.0594
+  },
+  {
+    "warehouseId": "FLP-BHI-BTS",
+    "name": "Flipkart Bhiwandi BTS",
+    "city": "Thane",
+    "state": "Maharashtra",
+    "cluster": "Western",
+    "type": "Fulfillment Center",
+    "lat": 19.2900,
+    "lng": 73.0500
+  },
+  {
+    "warehouseId": "IND-BAV-01",
+    "name": "IndoSpace Bavla",
+    "city": "Ahmedabad",
+    "state": "Gujarat",
+    "cluster": "Western",
+    "type": "Distribution Hub",
+    "lat": 22.8360,
+    "lng": 72.3680
+  },
+  {
+    "warehouseId": "CWC-MUN-01",
+    "name": "CFS Mundra",
+    "city": "Mundra",
+    "state": "Gujarat",
+    "cluster": "Western",
+    "type": "Freight Hub",
+    "lat": 22.8400,
+    "lng": 69.7200
+  },
+  {
+    "warehouseId": "IND-ORA-01",
+    "name": "IndoSpace Oragadam I",
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "cluster": "Southern",
+    "type": "Logistics Park",
+    "lat": 12.8360,
+    "lng": 79.9700
+  },
+  {
+    "warehouseId": "IND-NAR-01",
+    "name": "IndoSpace Narasapura",
+    "city": "Kolar",
+    "state": "Karnataka",
+    "cluster": "Southern",
+    "type": "Industrial Hub",
+    "lat": 13.0947,
+    "lng": 77.9724
+  },
+  {
+    "warehouseId": "AMZ-BLR7",
+    "name": "Amazon FC BLR7",
+    "city": "Bangalore",
+    "state": "Karnataka",
+    "cluster": "Southern",
+    "type": "Fulfillment Center",
+    "lat": 12.8100,
+    "lng": 77.6900
+  },
+  {
+    "warehouseId": "AMZ-HYD8",
+    "name": "Amazon FC HYD8",
+    "city": "Shamshabad",
+    "state": "Telangana",
+    "cluster": "Southern",
+    "type": "Fulfillment Center",
+    "lat": 17.2500,
+    "lng": 78.4300
+  },
+  {
+    "warehouseId": "ESR-ULU-01",
+    "name": "ESR Uluberia",
+    "city": "Howrah",
+    "state": "West Bengal",
+    "cluster": "Eastern",
+    "type": "Distribution Hub",
+    "lat": 22.4600,
+    "lng": 88.1100
+  },
+  {
+    "warehouseId": "ESR-NAG-02",
+    "name": "ESR Nagpur 2",
+    "city": "Nagpur",
+    "state": "Maharashtra",
+    "cluster": "Central",
+    "type": "Distribution Hub",
+    "lat": 21.0800,
+    "lng": 79.0500
+  },
+  {
+    "warehouseId": "FLP-GUW-01",
+    "name": "Flipkart Guwahati FC",
+    "city": "Guwahati",
+    "state": "Assam",
+    "cluster": "Eastern",
+    "type": "Fulfillment Center",
+    "lat": 26.1100,
+    "lng": 91.6100
+  },
+  {
+    "warehouseId": "SNW-TAL-01",
+    "name": "Snowman Taloja",
+    "city": "Navi Mumbai",
+    "state": "Maharashtra",
+    "cluster": "Cold Chain",
+    "type": "Cold Storage",
+    "lat": 19.0600,
+    "lng": 73.1200
+  },
+  {
+    "warehouseId": "IND-DEL-01",
+    "name": "Indicold Delhi",
+    "city": "Delhi",
+    "state": "Delhi",
+    "cluster": "Cold Chain",
+    "type": "Cold Storage",
+    "lat": 28.5500,
+    "lng": 77.2200
+  },
+  {
+    "warehouseId": "GATI-DHA-01",
+    "name": "GK Cold Chain",
+    "city": "Dharuhera",
+    "state": "Haryana",
+    "cluster": "Cold Chain",
+    "type": "Cold Storage",
+    "lat": 28.2100,
+    "lng": 76.7900
+  }
+]
