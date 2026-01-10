@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
-const cors = require("cors");
+
 const mongoose = require("mongoose");
 
 const app = express();
@@ -10,11 +10,21 @@ const app = express();
 /* =====================
    Middleware
 ===================== */
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
+const cors = require("cors");
+
+app.use(
+  cors({
+    origin: [
+      "https://falconxpress-1.onrender.com", // frontend (static site)
+      "http://localhost:5500",               // local frontend (optional)
+      "http://localhost:3000"
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
+app.options("*", cors());
 app.use(express.json());
 app.use(express.static("frontend"));
 
@@ -173,3 +183,4 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🔥 Server running on port ${PORT}`);
 });
+
