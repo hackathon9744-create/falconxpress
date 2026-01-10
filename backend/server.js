@@ -11,9 +11,9 @@ const app = express();
    Middleware
 ===================== */
 app.use(cors({
-   origin: "https://hackathon9744-create.github.io",
-   methods: ["GET","POST","PUT","DELETE"],
-   credentials: true
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
 }));
 app.use(express.json());
 app.use(express.static("frontend"));
@@ -40,7 +40,12 @@ mongoose
    HTTP + Socket.IO
 ===================== */
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
 /* =====================
    OSRM Helper
@@ -164,7 +169,7 @@ io.on("connection", socket => {
    START SERVER
 ===================== */
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🔥 Server running on http://localhost:${PORT}`);
 
+server.listen(PORT, () => {
+  console.log(`🔥 Server running on port ${PORT}`);
 });
