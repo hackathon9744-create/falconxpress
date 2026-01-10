@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiSync - Driver Portal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            cyan: '#00f3ff',
+                            dark: '#0a0a12',
+                            panel: 'rgba(255, 255, 255, 0.05)',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f3ff; }
+
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .dark .glass {
+            background: rgba(10, 10, 18, 0.7);
+            border: 1px solid rgba(0, 243, 255, 0.1);
+        }
+        .light-glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 243, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Neon Glow */
+        .neon-text { text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); }
+
+        /* Page Transitions */
+        body.fade-out-active { opacity: 0; }
+        
+        /* Initial Body State */
+        body { overflow: hidden; transition: opacity 0.8s ease; }
+
+        /* CRITICAL: Autofill Fix to prevent white background */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px rgba(0,0,0,0) inset !important;
+            -webkit-text-fill-color: inherit !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* Transparent Input Field */
+       /* === INPUT FIELD (FIXED TRANSPARENCY) === */
+.input-field {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(0, 0, 0, 0.25);
+
+    color: #0a0a12;
+    font-size: 0.95rem;
+
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+/* Placeholder */
+.input-field::placeholder {
+    color: rgba(0, 0, 0, 0.45);
+}
+
+/* Focus */
+.input-field:focus {
+    border-color: #00f3ff;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.35);
+}
+
+/* === DARK MODE === */
+html.dark .input-field {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+}
+
+html.dark .input-field::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+        
+        select.input-field {
+            @apply pl-3;
+        }
+        
+        /* Ensure select options are readable */
+        select.input-field option {
+            @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-white;
+        }
+
+        /* File Input */
+        .file-input {
+            @apply block w-full text-sm text-gray-600 dark:text-gray-400
+            file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 
+            file:text-xs file:font-bold file:uppercase
+            
+            file:bg-brand-cyan file:text-black hover:file:bg-cyan-300
+            dark:file:bg-brand-cyan dark:file:text-black dark:hover:file:bg-cyan-300
+            
+            cursor-pointer 
+            bg-transparent border border-gray-400/50
+            dark:border-white/20
+            rounded-lg;
+        }
+
+        /* Section Header */
+        .form-section-title {
+            @apply text-xs uppercase tracking-widest font-bold text-brand-cyan mb-4 border-b border-gray-300 dark:border-white/10 pb-2 mt-4;
+        }
+        
+        /* Label Styling */
+        .input-label {
+            @apply text-xs uppercase text-gray-500 dark:text-gray-400 font-bold mb-1.5 block tracking-wide;
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-900 dark:text-white bg-gray-100 dark:bg-[#050508] transition-colors duration-500">
+
+    <!-- Canvas Background -->
+    <canvas id="networkCanvas" class="fixed inset-0 w-full h-full pointer-events-none z-0 opacity-40 dark:opacity-60 transition-opacity duration-1000"></canvas>
+
+    <!-- Theme Toggle -->
+    <button id="themeToggle" class="fixed top-6 right-6 z-50 p-3 rounded-full glass hover:bg-white/10 dark:hover:bg-brand-cyan/20 transition-all duration-300 group">
+        <i class="fas fa-sun text-yellow-500 dark:hidden text-xl"></i>
+        <i class="fas fa-moon text-brand-cyan hidden dark:block text-xl group-hover:shadow-[0_0_15px_#00f3ff]"></i>
+    </button>
+
+    <!-- App Container -->
+    <div id="app" class="relative z-10 w-full h-screen flex flex-col justify-center items-center px-4">
+
+        <!-- ===== VIEW 1: LOGIN CARD ===== -->
+        <div id="loginView" class="glass dark:glass light-glass w-full max-w-md p-8 rounded-2xl shadow-2xl animate-fade-in-up border-t-4 border-t-brand-cyan relative transition-all duration-500">
+            
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="inline-block p-3 rounded-xl border border-brand-cyan/30 bg-brand-cyan/10 mb-4 animate-float">
+                    <i class="fas fa-truck-fast text-3xl text-brand-cyan neon-text"></i>
+                </div>
+                <h1 class="font-display text-3xl font-bold tracking-tighter text-gray-900 dark:text-white">
+                    Logi<span class="text-brand-cyan">Sync</span>
+                </h1>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 uppercase tracking-widest font-semibold text-brand-cyan">
+                    Driver Portal
+                </p>
+            </div>
+
+            <!-- Login Form -->
+            <form onsubmit="handleLogin(event)" class="space-y-6">
+                
+                <div class="space-y-1">
+                    <label class="input-label">Driver ID / Mobile</label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-id-card text-gray-500 dark:text-gray-400 group-focus-within:text-brand-cyan transition-colors"></i>
+                        </div>
+                      <input id="loginPhone" type="text" required class="input-field pl-10"
+       placeholder="D-1234 or 9876543210">
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="input-label">Password</label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-lock text-gray-500 dark:text-gray-400 group-focus-within:text-brand-cyan transition-colors"></i>
+                        </div>
+                       <input id="loginPassword" type="password" required class="input-field pl-10"
+       placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full mt-4 bg-brand-cyan hover:bg-cyan-300 text-black font-display font-bold text-lg py-3 rounded-lg shadow-[0_0_15px_rgba(0,243,255,0.3)] hover:shadow-[0_0_25px_rgba(0,243,255,0.5)] transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                    <i class="fas fa-right-to-bracket"></i> Login
+                </button>
+
+            </form>
+
+            <div class="mt-6 text-center border-t border-gray-300 dark:border-white/10 pt-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Don't have an account?</p>
+                <button onclick="toggleView('register')" class="text-sm font-bold text-brand-cyan hover:text-cyan-600 dark:hover:text-white transition-colors uppercase tracking-wider">
+                    New Driver? Register Here
+                </button>
+            </div>
+
+        </div>
+
+
+        <!-- ===== VIEW 2: REGISTRATION WIZARD ===== -->
+        <div id="registerView" class="hidden glass dark:glass light-glass w-full max-w-2xl p-8 rounded-2xl shadow-2xl animate-fade-in-up border-t-4 border-t-brand-cyan relative max-h-[90vh] flex flex-col">
+            
+            <!-- Header with Progress -->
+            <div class="mb-8 flex-shrink-0">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-display text-2xl font-bold text-gray-900 dark:text-white"><span class="text-brand-cyan">Driver</span> Registration</h2>
+                    <button onclick="toggleView('login')" class="text-gray-400 hover:text-red-500 transition-colors p-2"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                
+                <!-- Progress Indicators -->
+                <div class="flex justify-between items-center relative px-2">
+                    <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-0.5 bg-gray-300 dark:bg-gray-700 -z-10 rounded-full"></div>
+                    
+                    <div class="flex flex-col items-center gap-2">
+                        <div id="step-dot-1" class="w-8 h-8 rounded-full bg-brand-cyan text-black flex items-center justify-center font-bold text-xs transition-all ring-4 ring-brand-cyan/20">1</div>
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-brand-cyan">Personal</span>
+                    </div>
+                    
+                    <div class="flex flex-col items-center gap-2">
+                        <div id="step-dot-2" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-800 border border-gray-400 dark:border-gray-600 text-gray-600 dark:text-gray-400 flex items-center justify-center font-bold text-xs transition-all">2</div>
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-gray-500">Vehicle</span>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-2">
+                        <div id="step-dot-3" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-800 border border-gray-400 dark:border-gray-600 text-gray-600 dark:text-gray-400 flex items-center justify-center font-bold text-xs transition-all">3</div>
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-gray-500">Docs</span>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-2">
+                        <div id="step-dot-4" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-800 border border-gray-400 dark:border-gray-600 text-gray-600 dark:text-gray-400 flex items-center justify-center font-bold text-xs transition-all">4</div>
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-gray-500">Account</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrollable Form Area -->
+            <div class="overflow-y-auto pr-2 custom-scrollbar flex-1">
+                
+                <!-- STEP 1: Personal Details -->
+                <div id="step-1" class="form-step space-y-6">
+                    <div class="space-y-1">
+                        <label class="input-label">Full Name</label>
+                       <input id="regName" type="text" class="input-field" placeholder="Ex: John Doe">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-1">
+                            <label class="input-label">Mobile Number</label>
+                           <input id="regPhone" type="tel" class="input-field" placeholder="+1 234 567 890">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="input-label">Email Address (Optional)</label>
+                            <input type="email" class="input-field" placeholder="john@example.com">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="input-label">Date of Birth</label>
+                        <input type="date" class="input-field">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="input-label">Permanent Address</label>
+                        <textarea rows="3" class="input-field resize-none" placeholder="House No, Street, City, State, PIN Code"></textarea>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Vehicle Details -->
+                <div id="step-2" class="form-step hidden space-y-6">
+                    <div class="space-y-1">
+                        <label class="input-label">Vehicle Type</label>
+                        <select class="input-field">
+                            <option>Heavy Truck (10+ Tires)</option>
+                            <option>Light Truck / Tempo</option>
+                            <option>Delivery Van</option>
+                            <option>Motorbike / Scooter</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-1">
+                            <label class="input-label">Manufacturer</label>
+                            <input type="text" class="input-field" placeholder="e.g. Tata Motors">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="input-label">Vehicle Model</label>
+                            <input type="text" class="input-field" placeholder="e.g. Ace Gold">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-1">
+                            <label class="input-label">Vehicle Number</label>
+                            <input type="text" class="input-field uppercase" placeholder="MH-04-AB-1234">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="input-label">Registration Year</label>
+                            <input type="number" class="input-field" placeholder="2022">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-1">
+                            <label class="input-label">Fuel Type</label>
+                            <select class="input-field">
+                                <option>Diesel</option>
+                                <option>Petrol</option>
+                                <option>CNG</option>
+                                <option>Electric</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="input-label">Load Capacity (Tons)</label>
+                            <input type="number" class="input-field" placeholder="e.g. 1.5">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Document Uploads & KYC -->
+                <div id="step-3" class="form-step hidden space-y-8">
+                    
+                    <!-- Sub-section: Driver Identity -->
+                    <div class="space-y-4">
+                        <div class="form-section-title">Driver Identity Proofs</div>
+                        
+                        <!-- License -->
+                        <div class="p-4 border border-gray-400/40 dark:border-white/10 rounded-xl bg-transparent">
+                            <p class="text-gray-800 dark:text-gray-200 text-sm mb-4 font-bold flex items-center gap-2"><i class="fas fa-id-badge text-brand-cyan"></i> Driving License</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase text-gray-500 font-bold">DL Number</label>
+                                    <input type="text" class="input-field py-2 text-sm" placeholder="DL-1234567890123">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase text-gray-500 font-bold">Expiry Date</label>
+                                    <input type="date" class="input-field py-2 text-sm">
+                                </div>
+                            </div>
+                            <input type="file" class="file-input">
+                        </div>
+
+                        <!-- Aadhaar -->
+                        <div class="p-4 border border-gray-400/40 dark:border-white/10 rounded-xl bg-transparent">
+                            <p class="text-gray-800 dark:text-gray-200 text-sm mb-4 font-bold flex items-center gap-2"><i class="fas fa-fingerprint text-brand-cyan"></i> Aadhaar Card</p>
+                            <div class="space-y-1 mb-4">
+                                <label class="text-[10px] uppercase text-gray-500 font-bold">Aadhaar Number</label>
+                                <input type="text" class="input-field py-2 text-sm" placeholder="XXXX-XXXX-XXXX">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase text-gray-500 font-bold">Front Side</label>
+                                    <input type="file" class="file-input">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase text-gray-500 font-bold">Back Side</label>
+                                    <input type="file" class="file-input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PAN -->
+                        <div class="p-4 border border-gray-400/40 dark:border-white/10 rounded-xl bg-transparent">
+                            <p class="text-gray-800 dark:text-gray-200 text-sm mb-4 font-bold flex items-center gap-2"><i class="fas fa-address-card text-brand-cyan"></i> PAN Card</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase text-gray-500 font-bold">PAN Number</label>
+                                    <input type="text" class="input-field py-2 text-sm" placeholder="ABCDE1234F">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase text-gray-500 font-bold">Upload</label>
+                                    <input type="file" class="file-input">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-section: Vehicle Documents -->
+                    <div class="space-y-4">
+                        <div class="form-section-title">Vehicle Compliances</div>
+
+                        <!-- Insurance -->
+                        <div class="p-4 border border-gray-400/40 dark:border-white/10 rounded-xl bg-transparent">
+                            <p class="text-gray-800 dark:text-gray-200 text-sm mb-4 font-bold flex items-center gap-2"><i class="fas fa-shield-alt text-brand-cyan"></i> Insurance Policy</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase text-gray-500 font-bold">Policy Number</label>
+                                    <input type="text" class="input-field py-2 text-sm" placeholder="POL-123456789">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase text-gray-500 font-bold">Valid Till</label>
+                                    <input type="date" class="input-field py-2 text-sm">
+                                </div>
+                            </div>
+                            <input type="file" class="file-input">
+                        </div>
+
+                         <!-- PUC -->
+                         <div class="p-4 border border-gray-400/40 dark:border-white/10 rounded-xl bg-transparent">
+                            <p class="text-gray-800 dark:text-gray-200 text-sm mb-4 font-bold flex items-center gap-2"><i class="fas fa-smog text-brand-cyan"></i> PUC Certificate</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase text-gray-500 font-bold">PUC Number</label>
+                                    <input type="text" class="input-field py-2 text-sm" placeholder="PUC-12345">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase text-gray-500 font-bold">Valid Till</label>
+                                    <input type="date" class="input-field py-2 text-sm">
+                                </div>
+                            </div>
+                            <input type="file" class="file-input">
+                        </div>
+
+                        <!-- RC Book -->
+                        <div class="p-4 border border-gray-400/40 dark:border-white/10 rounded-xl bg-transparent">
+                            <p class="text-gray-800 dark:text-gray-200 text-sm mb-4 font-bold flex items-center gap-2"><i class="fas fa-book text-brand-cyan"></i> RC Book (Optional)</p>
+                            <input type="file" class="file-input">
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- STEP 4: Account Setup -->
+                <div id="step-4" class="form-step hidden space-y-6">
+                    <div class="space-y-1">
+                        <label class="input-label">Create Password</label>
+                      <input id="regPassword" type="password" class="input-field" placeholder="••••••••">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="input-label">Confirm Password</label>
+                      <input id="regConfirmPassword" type="password" class="input-field" placeholder="••••••••">
+                    </div>
+                    
+                    <div class="p-4 bg-brand-cyan/10 rounded-lg border border-brand-cyan/20">
+                        <div class="flex items-start gap-3">
+                            <input type="checkbox" id="terms" class="mt-1 w-5 h-5 rounded border-gray-400 dark:border-gray-600 text-brand-cyan focus:ring-brand-cyan bg-transparent cursor-pointer">
+                            <label for="terms" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                                I confirm that all provided details are accurate. I agree to the 
+                                <a href="#" class="text-brand-cyan hover:underline font-bold">Terms & Conditions</a> and 
+                                <a href="#" class="text-brand-cyan hover:underline font-bold">Privacy Policy</a> of LogiSync.
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="mt-8 pt-4 border-t border-gray-300 dark:border-white/10 flex justify-between flex-shrink-0">
+                <button type="button" id="prevBtn" onclick="changeStep(-1)" class="px-6 py-2.5 rounded-lg border border-gray-400/50 dark:border-white/20 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/5 transition hidden font-semibold">
+                    Back
+                </button>
+                <button type="button" id="nextBtn" onclick="changeStep(1)" class="px-8 py-2.5 rounded-lg bg-brand-cyan text-black font-bold hover:bg-cyan-300 shadow-[0_0_20px_rgba(0,243,255,0.4)] transition ml-auto flex items-center gap-2">
+                    Next Step <i class="fas fa-arrow-right text-xs"></i>
+                </button>
+            </div>
+
+        </div>
+        
+        <div class="mt-8 text-center animate-fade-in-up" style="animation-delay: 0.2s;">
+            <p class="text-xs text-gray-500 dark:text-gray-600 uppercase tracking-widest">© 2025 LogiSync Corp. Driver Network.</p>
+       </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // --- View Switching Logic ---
+        function toggleView(view) {
+            const loginView = document.getElementById('loginView');
+            const registerView = document.getElementById('registerView');
+
+            if (view === 'register') {
+                loginView.classList.add('hidden');
+                registerView.classList.remove('hidden');
+                resetRegistration();
+            } else {
+                registerView.classList.add('hidden');
+                loginView.classList.remove('hidden');
+            }
+        }
+
+        // --- Registration Wizard Logic ---
+        let currentStep = 1;
+        const totalSteps = 4;
+
+        function resetRegistration() {
+            currentStep = 1;
+            updateStepUI();
+        }
+
+        function changeStep(direction) {
+            if (direction === 1) {
+                if (currentStep === totalSteps) {
+                    submitRegistration();
+                    return;
+                }
+                currentStep++;
+            } else {
+                if (currentStep > 1) currentStep--;
+            }
+            updateStepUI();
+        }
+
+        function updateStepUI() {
+            // 1. Show/Hide Form Sections
+            for (let i = 1; i <= totalSteps; i++) {
+                document.getElementById(`step-${i}`).classList.toggle('hidden', i !== currentStep);
+            }
+
+            // 2. Update Dots & Labels
+            for (let i = 1; i <= totalSteps; i++) {
+                const dot = document.getElementById(`step-dot-${i}`);
+                const label = dot.nextElementSibling; // The text span below the dot
+                
+                if (i <= currentStep) {
+                    dot.className = 'w-8 h-8 rounded-full bg-brand-cyan text-black flex items-center justify-center font-bold text-xs transition-all ring-4 ring-brand-cyan/20';
+                    label.classList.add('text-brand-cyan');
+                    label.classList.remove('text-gray-500');
+                    
+                    if(i < currentStep) {
+                        dot.innerHTML = '<i class="fas fa-check"></i>';
+                        dot.classList.add('bg-emerald-500', 'ring-emerald-500/20');
+                        dot.classList.remove('bg-brand-cyan', 'ring-brand-cyan/20');
+                    } else {
+                        dot.textContent = i;
+                    }
+                } else {
+                    dot.className = 'w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-800 border border-gray-400 dark:border-gray-600 text-gray-600 dark:text-gray-400 flex items-center justify-center font-bold text-xs transition-all';
+                    dot.textContent = i;
+                    label.classList.remove('text-brand-cyan');
+                    label.classList.add('text-gray-500');
+                }
+            }
+
+            // 3. Update Buttons
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            prevBtn.classList.toggle('hidden', currentStep === 1);
+            
+            if (currentStep === totalSteps) {
+                nextBtn.innerHTML = 'Complete Registration <i class="fas fa-check-circle"></i>';
+                nextBtn.classList.add('bg-emerald-500', 'hover:bg-emerald-400', 'shadow-emerald-500/30');
+                nextBtn.classList.remove('bg-brand-cyan', 'hover:bg-cyan-300', 'shadow-cyan-500/30'); // Remove cyan shadow
+            } else {
+                nextBtn.innerHTML = 'Next Step <i class="fas fa-arrow-right"></i>';
+                nextBtn.classList.add('bg-brand-cyan', 'hover:bg-cyan-300', 'shadow-cyan-500/30'); // Add cyan shadow back
+                nextBtn.classList.remove('bg-emerald-500', 'hover:bg-emerald-400', 'shadow-emerald-500/30');
+            }
+        }
+
+        
+       
+
+        // --- Theme Toggle Logic ---
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+        });
+
+        // --- Background Canvas Animation ---
+        (function() {
+            const canvas = document.getElementById('networkCanvas');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+            const particleCount = 60;
+            const connectionDistance = 150;
+            
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height;
+                    this.vx = (Math.random() - 0.5) * 0.5;
+                    this.vy = (Math.random() - 0.5) * 0.5;
+                    this.size = Math.random() * 2 + 1;
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x < 0 || this.x > width) this.vx *= -1;
+                    if (this.y < 0 || this.y > height) this.vy *= -1;
+                }
+                draw() {
+                    const isDark = html.classList.contains('dark');
+                    ctx.fillStyle = isDark ? 'rgba(0, 243, 255, 0.7)' : 'rgba(0, 0, 0, 0.3)';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function initParticles() {
+                particles = [];
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push(new Particle());
+                }
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+                const isDark = html.classList.contains('dark');
+                const lineColor = isDark ? 'rgba(0, 243, 255, ' : 'rgba(0, 0, 0, ';
+
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+
+                    for (let j = i; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance < connectionDistance) {
+                            ctx.beginPath();
+                            const opacity = 1 - (distance / connectionDistance);
+                            ctx.strokeStyle = lineColor + (opacity * 0.15) + ')';
+                            ctx.lineWidth = 1;
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+            initParticles();
+            animate();
+        })();
+    </script>
+
+
+<script>
+async function submitRegistration() {
+  const name = document.getElementById("regName").value;
+  const phone = document.getElementById("regPhone").value;
+  const password = document.getElementById("regPassword").value;
+  const confirm = document.getElementById("regConfirmPassword").value;
+
+  if (!name || !phone || !password || !confirm) {
+    alert("Please fill all required fields");
+    return;
+  }
+
+  if (password !== confirm) {
+    alert("Passwords do not match");
+    return;
+  }
+
+  try {
+    const res = await fetch("http://localhost:5000/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        phone,
+        password,
+        role: "driver"
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message);
+      return;
+    }
+
+    alert("Registration successful. Waiting for manager approval.");
+    toggleView("login");
+
+  } catch (err) {
+    alert("Server error");
+  }
+}
+</script>
+
+
+    <script>
+const API_URL = "http://localhost:5000";
+
+async function handleLogin(e) {
+  e.preventDefault();
+
+  const phone = document.getElementById("loginPhone").value;
+  const password = document.getElementById("loginPassword").value;
+
+  if (!phone || !password) {
+    alert("Please fill all fields");
+    return;
+  }
+
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Authenticating...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message);
+      btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Login';
+      btn.disabled = false;
+      return;
+    }
+
+    if (data.role !== "driver") {
+      alert("Not a driver account");
+      return;
+    }
+
+    // ✅ Store token
+    localStorage.setItem("driverToken", data.token);
+    localStorage.setItem("role", "driver");
+
+    // ✅ Redirect
+    document.body.classList.add('fade-out-active');
+    setTimeout(() => {
+      window.location.href = "drivers-dashboard.html";
+    }, 800);
+
+  } catch (err) {
+    alert("Server error");
+    btn.disabled = false;
+  }
+}
+</script>
+    
+</body>
+</html>

@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+
+    <script>
+  (function () {
+    const token = localStorage.getItem("managerToken");
+    const role = localStorage.getItem("role");
+
+    if (!token || role !== "manager") {
+      window.location.replace("manager.html");
+    }
+  })();
+</script>
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiSync | Drivers Management</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            400: '#22d3ee',
+                            500: '#06b6d4', // Cyan 500
+                            600: '#0891b2',
+                            900: '#0f172a', // Slate 900
+                            950: '#020617', // Slate 950
+                        },
+                        accent: {
+                            red: '#ef4444',
+                            yellow: '#eab308',
+                            green: '#22c55e',
+                        }
+                    },
+                    animation: {
+                        'fade-in-right': 'fadeInRight 0.3s ease-out forwards',
+                        'fade-in-up': 'fadeInUp 0.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeInRight: {
+                            '0%': { opacity: '0', transform: 'translateX(20px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .tech-bg {
+            background-color: #0f172a;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.05) 0px, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+        }
+        html:not(.dark) .tech-bg {
+            background-color: #f1f5f9;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.05) 0px, transparent 50%),
+                linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        html:not(.dark) .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(226, 232, 240, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .glass-sidebar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        html:not(.dark) .glass-sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-right: 1px solid rgba(203, 213, 225, 0.4);
+        }
+        .table-row-hover:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+        }
+        html:not(.dark) .table-row-hover:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        .drawer-panel {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    </style>
+</head>
+<body class="tech-bg text-slate-300 antialiased h-screen flex overflow-hidden selection:bg-brand-500 selection:text-white">
+
+    <!-- Mobile Backdrop -->
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-slate-900/80 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
+
+    <!-- 2. SIDEBAR -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 glass-sidebar flex flex-col justify-between transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-300">
+        <!-- Logo Area -->
+        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-700/50 dark:border-slate-700/50 border-slate-200">
+            <div class="flex items-center">
+                <div class="w-8 h-8 rounded bg-brand-500/20 flex items-center justify-center text-brand-600 dark:text-brand-400 mr-3">
+                    <i class="fas fa-cube"></i>
+                </div>
+                <span class="font-display font-bold text-lg text-slate-900 dark:text-white tracking-wide">
+                    Managers <span class="text-brand-600 dark:text-brand-500">Portal</span>
+                </span>
+            </div>
+            <button class="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white" onclick="toggleSidebar()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 py-6 space-y-1 overflow-y-auto">
+            <a href="#" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-th-large w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Dashboard</span>
+            </a>
+            <a href="#" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-truck w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Shipments</span>
+            </a>
+            <a href="#" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-map-marked-alt w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Fleet Map</span>
+            </a>
+
+            <!-- Drivers (Active) -->
+            <a href="#" class="flex items-center px-6 py-3 text-brand-600 dark:text-brand-400 bg-brand-500/10 border-r-2 border-brand-500 group relative">
+                <i class="fas fa-users w-6 text-center text-lg"></i>
+                <span class="ml-3 font-medium">Drivers</span>
+                <div class="absolute inset-0 bg-brand-400/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </a>
+
+            <a href="#" class="flex items-center px-6 py-3 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-wallet w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Payments</span>
+            </a>
+            <a href="#" class="flex items-center px-6 py-3 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-chart-pie w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Analytics</span>
+            </a>
+            <a href="#" class="flex items-center px-6 py-3 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-leaf w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Carbon Footprint</span>
+            </a>
+
+            <a href="#" class="flex items-center px-6 py-3 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-file-invoice w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Documents</span>
+            </a>
+        </nav>
+
+        <!-- Bottom Actions -->
+        <div class="p-4 border-t border-slate-700/50 space-y-2">
+            <a href="#" class="flex items-center px-2 py-2 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white rounded-lg transition-colors group">
+                <i class="fas fa-cog w-6 text-center"></i>
+                <span class="ml-3 text-sm">Settings</span>
+            </a>
+            <button onclick="window.location.reload()" class="w-full flex items-center px-2 py-2 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white rounded-lg transition-colors group">
+                <i class="fas fa-sign-out-alt w-6 text-center group-hover:text-red-600"></i>
+                <span class="ml-3 text-sm">Log Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <!-- TOP BAR -->
+        <header class="h-16 glass-panel border-b border-slate-200 dark:border-slate-700/50 flex items-center justify-between px-6 z-20 shrink-0 gap-4">
+            <div class="flex items-center space-x-4 shrink-0">
+                <button class="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white focus:outline-none" onclick="toggleSidebar()">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <h2 class="font-display font-semibold text-lg text-slate-900 dark:text-white tracking-wide">Driver Management</h2>
+            </div>
+
+            <div class="flex items-center space-x-4 shrink-0">
+                <button id="themeToggle" class="w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-brand-500 dark:hover:text-brand-400 hover:border-brand-500/50 transition-all">
+                    <i class="fas fa-moon hidden dark:block text-xs"></i>
+                    <i class="fas fa-sun dark:hidden text-yellow-500 text-xs"></i>
+                </button>
+
+                <!-- Profile Dropdown (Updated) -->
+                <div class="relative pl-4 border-l border-slate-200 dark:border-slate-700/50 ml-2">
+                    <button onclick="toggleProfileMenu()" class="flex items-center space-x-3 focus:outline-none group">
+                        <div class="text-right hidden md:block">
+                            <p class="text-xs font-medium text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">Alex Chen</p>
+                            <p class="text-[10px] text-brand-600 dark:text-brand-500 uppercase tracking-wider">Logistics Mgr</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-600 to-blue-600 p-[1px] shadow-sm group-hover:shadow-md transition-shadow">
+                            <div class="w-full h-full rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-white">AC</div>
+                        </div>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div id="profileMenu" class="hidden absolute right-0 mt-3 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none z-50 transform origin-top-right transition-all">
+                        <div class="py-2">
+                            <!-- User Info Header -->
+                            <div class="px-4 py-3 border-b border-slate-200 dark:border-white/10 mb-1">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Signed in as</p>
+                                <p class="text-sm font-medium text-slate-900 dark:text-white truncate">manager@logisync.com</p>
+                            </div>
+                            
+                            <!-- Menu Items -->
+                            <a href="#" class="group flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                                <i class="fas fa-id-card-alt mr-3 w-4 text-center text-slate-400 group-hover:text-brand-500 transition-colors"></i>
+                                Manager Details
+                            </a>
+                            <a href="#" class="group flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                                <i class="fas fa-cog mr-3 w-4 text-center text-slate-400 group-hover:text-brand-500 transition-colors"></i>
+                                Preferences
+                            </a>
+                            
+                            <div class="border-t border-slate-200 dark:border-white/10 my-1"></div>
+                            
+                            <button onclick="window.location.reload()" class="w-full text-left group flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                <i class="fas fa-sign-out-alt mr-3 w-4 text-center group-hover:text-red-600 dark:group-hover:text-red-400"></i>
+                                Log Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- DRIVERS CONTENT AREA -->
+        <main class="flex-1 overflow-hidden flex flex-col relative">
+            
+            <!-- 1. PAGE HEADER -->
+            <div class="px-6 pt-6 pb-2 shrink-0">
+                <div class="flex justify-between items-end mb-4">
+                    <div>
+                        <h1 class="font-display text-2xl font-bold text-slate-900 dark:text-white mb-1">Drivers</h1>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Verify, approve, and monitor fleet drivers and compliance.</p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <!-- Expiry Alerts (Moved & Blinking) -->
+                        <button onclick="openExpiryModal()" class="px-3 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-xs flex items-center font-bold animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.4)]">
+                            <i class="fas fa-exclamation-triangle mr-2"></i> Expiry Alerts (3)
+                        </button>
+
+                        <!-- Filter Dropdown (Updated) -->
+                        <div class="relative">
+                            <button onclick="toggleFilterMenu()" class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-xs flex items-center">
+                                <i class="fas fa-filter mr-2"></i> Filter
+                            </button>
+                            
+                            <!-- Filter Menu -->
+                            <div id="filterMenu" class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 p-4 animate-fade-in-up origin-top-right">
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1 block">Search Driver</label>
+                                        <div class="relative">
+                                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                            <input type="text" id="filterSearch" placeholder="Name, ID, Email..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1 block">Vehicle Status</label>
+                                        <select id="filterVehicle" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 appearance-none cursor-pointer">
+                                            <option value="all">All Vehicles</option>
+                                            <option value="assigned">Assigned Only</option>
+                                            <option value="unassigned">Unassigned Only</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex space-x-2 pt-2 border-t border-slate-100 dark:border-slate-800 mt-2">
+                                        <button onclick="applyFilters()" class="flex-1 bg-brand-600 hover:bg-brand-500 text-white rounded-lg py-2 text-xs font-medium transition-colors shadow-sm">Apply</button>
+                                        <button onclick="resetFilters()" class="px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg py-2 text-xs font-medium transition-colors">Reset</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-500/20 transition-all text-xs font-semibold tracking-wide flex items-center">
+                            <i class="fas fa-plus mr-2"></i> INVITE DRIVER
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 2. DRIVER STATUS TABS -->
+                <div class="flex items-center space-x-6 border-b border-slate-200 dark:border-slate-700/50">
+                    <button onclick="switchTab('pending', this)" class="tab-btn pb-3 border-b-2 border-brand-500 text-brand-600 dark:text-brand-400 font-medium text-sm transition-colors">
+                        Pending Verification <span class="ml-1 px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-500/20 text-[10px] text-yellow-600 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/30">4</span>
+                    </button>
+                    <button onclick="switchTab('approved', this)" class="tab-btn pb-3 border-b-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors text-sm">
+                        Approved <span class="ml-1 px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-500">28</span>
+                    </button>
+                    <button onclick="switchTab('rejected', this)" class="tab-btn pb-3 border-b-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors text-sm">
+                        Rejected
+                    </button>
+                    <button onclick="switchTab('suspended', this)" class="tab-btn pb-3 border-b-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors text-sm">
+                        Suspended
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. DRIVER VERIFICATION TABLE -->
+            <div class="flex-1 overflow-auto px-6 py-4">
+                <div class="glass-panel rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/50 shadow-sm">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 text-xs uppercase font-medium text-slate-500 dark:text-slate-400 sticky top-0 z-10">
+                            <tr>
+                                <th class="px-6 py-3 tracking-wider">Driver ID</th>
+                                <th class="px-6 py-3 tracking-wider">Name / Identity</th>
+                                <th class="px-6 py-3 tracking-wider">Contact</th>
+                                <th class="px-6 py-3 tracking-wider">Vehicle ID</th>
+                                <th class="px-6 py-3 tracking-wider">Documents</th>
+                                <th class="px-6 py-3 tracking-wider">Status</th>
+                                <th class="px-6 py-3 tracking-wider text-right">Action</th>
+                            </tr>
+                        </thead>
+<tbody
+  id="driversTable"
+  class="divide-y divide-slate-200 dark:divide-slate-700/50 text-sm"
+>
+  <tr>
+    <td colspan="7" class="px-6 py-8 text-center text-slate-400">
+      Loading drivers...
+    </td>
+  </tr>
+</tbody>
+                            
+                    
+
+            <!-- 6. DRIVER VERIFICATION DRAWER (The "Wow" Part) -->
+            <div id="driverDrawer" class="drawer-panel fixed inset-y-0 right-0 w-[450px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 shadow-2xl z-50 transform translate-x-full flex flex-col">
+                <!-- Header -->
+                <div class="h-16 px-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+                    <div>
+                        <h2 class="font-display font-bold text-lg text-slate-900 dark:text-white">Driver Profile</h2>
+                        <span id="drawer-id" class="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">#DR-0000</span>
+                    </div>
+                    <button onclick="closeDrawer()" class="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Content -->
+                <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                    
+                    <!-- Profile Summary -->
+                    <div class="flex items-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <div id="drawer-initials" class="w-16 h-16 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-600 dark:text-brand-400 text-2xl font-bold mr-4">--</div>
+                        <div>
+                            <h3 id="drawer-name" class="text-lg font-bold text-slate-900 dark:text-white">Driver Name</h3>
+                            <p id="drawer-role" class="text-sm text-slate-500">Role</p>
+                            <div class="flex mt-1 space-x-2">
+                                <span id="drawer-email" class="text-xs text-slate-400"><i class="fas fa-envelope mr-1"></i> email@example.com</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Verification Checklist (Dynamic Container) -->
+                    <div>
+                        <h4 class="text-xs font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-3">Verification Checklist</h4>
+                        <div id="drawer-checklist" class="space-y-2">
+                            <!-- Checklist items injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Submitted Documents (Dynamic Container) -->
+                    <div>
+                        <h4 class="text-xs font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-3">Submitted Documents</h4>
+                        <div id="drawer-docs" class="grid grid-cols-2 gap-3">
+                            <!-- Docs injected via JS -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex space-x-3" id="drawer-actions">
+                    <!-- Actions injected via JS -->
+                </div>
+            </div>
+
+            <!-- 7. EXPIRY ALERTS MODAL (New) -->
+            <div id="expiryModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity" onclick="closeExpiryModal()"></div>
+                <div class="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-fade-in-up">
+                    
+                    <!-- Header -->
+                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center text-red-600 dark:text-red-400">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-display font-semibold text-slate-900 dark:text-white">Compliance Alerts</h3>
+                                <p class="text-xs text-slate-500">Drivers with expired or expiring documents.</p>
+                            </div>
+                        </div>
+                        <button onclick="closeExpiryModal()" class="text-slate-400 hover:text-slate-500 dark:hover:text-white"><i class="fas fa-times"></i></button>
+                    </div>
+
+                    <!-- List Content -->
+                    <div class="p-0 overflow-y-auto max-h-[60vh]">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase font-medium text-slate-500 dark:text-slate-400">
+                                <tr>
+                                    <th class="px-6 py-3">Driver</th>
+                                    <th class="px-6 py-3">Document</th>
+                                    <th class="px-6 py-3">Expiry Date</th>
+                                    <th class="px-6 py-3">Status</th>
+                                    <th class="px-6 py-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 dark:divide-slate-700/50 text-sm">
+                                <!-- Item 1 -->
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold mr-3 text-slate-600 dark:text-slate-300">MS</div>
+                                            <span class="font-medium text-slate-900 dark:text-white">Mike Smith</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-300">Commercial License</td>
+                                    <td class="px-6 py-4 font-mono text-red-500">Expired 2 days ago</td>
+                                    <td class="px-6 py-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20">Critical</span></td>
+                                    <td class="px-6 py-4 text-right"><button class="text-brand-500 hover:underline text-xs">Notify</button></td>
+                                </tr>
+                                <!-- Item 2 -->
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold mr-3 text-slate-600 dark:text-slate-300">JD</div>
+                                            <span class="font-medium text-slate-900 dark:text-white">John Doe</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-300">Vehicle Insurance</td>
+                                    <td class="px-6 py-4 font-mono text-red-500">Expires Today</td>
+                                    <td class="px-6 py-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20">Critical</span></td>
+                                    <td class="px-6 py-4 text-right"><button class="text-brand-500 hover:underline text-xs">Notify</button></td>
+                                </tr>
+                                <!-- Item 3 -->
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold mr-3 text-slate-600 dark:text-slate-300">RK</div>
+                                            <span class="font-medium text-slate-900 dark:text-white">Raj Kumar</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-300">PUC Certificate</td>
+                                    <td class="px-6 py-4 font-mono text-yellow-500">Expires in 3 days</td>
+                                    <td class="px-6 py-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-yellow-100 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/20">Warning</span></td>
+                                    <td class="px-6 py-4 text-right"><button class="text-brand-500 hover:underline text-xs">Notify</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+                        <button onclick="closeExpiryModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg transition-colors">Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. ACTION MODAL (New: Replaces native confirm/prompt) -->
+            <div id="actionModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity" onclick="closeActionModal()"></div>
+                <div class="relative w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-fade-in-up">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div id="actionIcon" class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/20 flex items-center justify-center text-brand-600 dark:text-brand-400 mr-3">
+                                <i class="fas fa-question"></i>
+                            </div>
+                            <h3 id="actionTitle" class="text-lg font-bold text-slate-900 dark:text-white">Confirm Action</h3>
+                        </div>
+                        <p id="actionMessage" class="text-sm text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">Are you sure you want to proceed?</p>
+                        
+                        <!-- Input for Rejection Reason -->
+                        <div id="actionInputContainer" class="hidden mb-4">
+                            <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1">Reason</label>
+                            <textarea id="actionInput" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none resize-none" rows="3" placeholder="Enter details..."></textarea>
+                        </div>
+
+                        <div class="flex justify-end space-x-3">
+                            <button onclick="closeActionModal()" class="px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">Cancel</button>
+                            <button id="actionConfirmBtn" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-lg transition-colors shadow-lg shadow-brand-500/20">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. TOAST NOTIFICATION (New: Replaces native alert) -->
+            <div id="toastNotification" class="hidden fixed bottom-6 right-6 z-[70] flex items-center p-4 rounded-lg shadow-2xl border-l-4 animate-fade-in-up max-w-sm">
+                <i id="toastIcon" class="fas fa-check-circle text-lg mr-3"></i>
+                <div>
+                    <h4 id="toastTitle" class="font-bold text-sm">Success</h4>
+                    <p id="toastMessage" class="text-xs opacity-90">Action completed successfully.</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // ... existing scripts ...
+        // --- Expiry Modal Logic ---
+        function openExpiryModal() {
+            document.getElementById('expiryModal').classList.remove('hidden');
+        }
+        function closeExpiryModal() {
+            document.getElementById('expiryModal').classList.add('hidden');
+        }
+
+        // ... theme, sidebar, filter, profile logic ...
+        // --- Theme Management ---
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const htmlElement = document.documentElement;
+
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            htmlElement.classList.add('dark');
+        } else {
+            htmlElement.classList.remove('dark');
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            localStorage.theme = htmlElement.classList.contains('dark') ? 'dark' : 'light';
+        });
+
+        // --- Sidebar Logic ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+
+        // --- Filter Logic ---
+        let currentTab = 'pending'; // Default active tab
+
+        function toggleFilterMenu() {
+            const menu = document.getElementById('filterMenu');
+            menu.classList.toggle('hidden');
+            // Close profile menu if open
+            document.getElementById('profileMenu').classList.add('hidden');
+        }
+
+        // --- Profile Menu Logic ---
+        function toggleProfileMenu() {
+            const menu = document.getElementById('profileMenu');
+            menu.classList.toggle('hidden');
+            if (!menu.classList.contains('hidden')) {
+                menu.classList.add('animate-fade-in-up');
+                // Close filter menu if open
+                const filterMenu = document.getElementById('filterMenu');
+                if(filterMenu) filterMenu.classList.add('hidden');
+            }
+        }
+
+        function switchTab(status, btn) {
+  currentTab = status;
+
+  // 1️⃣ Update tab UI (KEEP THIS)
+  document.querySelectorAll('.tab-btn').forEach(t => {
+    t.className =
+      'tab-btn pb-3 border-b-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600 ' +
+      'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 ' +
+      'transition-colors text-sm';
+  });
+
+  btn.className =
+    'tab-btn pb-3 border-b-2 border-brand-500 text-brand-600 dark:text-brand-400 ' +
+    'font-medium text-sm transition-colors';
+
+  // 2️⃣ LOAD FROM BACKEND (NEW WAY)
+  loadDrivers(status);
+}
+
+        function applyFilters(closeMenu = true) {
+            const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
+            const vehicleFilter = document.getElementById('filterVehicle').value;
+
+            document.querySelectorAll('.driver-row').forEach(row => {
+                const rowStatus = row.getAttribute('data-status');
+                const rowText = row.innerText.toLowerCase();
+                const vehicleCell = row.cells[3].innerText.toLowerCase();
+
+                // 1. Check Tab
+                const tabMatch = rowStatus === currentTab;
+
+                // 2. Check Search
+                const searchMatch = rowText.includes(searchTerm);
+
+                // 3. Check Vehicle Status
+                let vehicleMatch = true;
+                if (vehicleFilter === 'assigned') {
+                    // Check if NOT unassigned or empty
+                    vehicleMatch = !vehicleCell.includes('unassigned') && !vehicleCell.includes('--');
+                } else if (vehicleFilter === 'unassigned') {
+                    vehicleMatch = vehicleCell.includes('unassigned') || vehicleCell.includes('--');
+                }
+
+                // Combine logic
+                if (tabMatch && searchMatch && vehicleMatch) {
+                    row.classList.remove('hidden');
+                    row.classList.add('animate-fade-in-right');
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+
+            if (closeMenu) {
+                document.getElementById('filterMenu').classList.add('hidden');
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('filterSearch').value = '';
+            document.getElementById('filterVehicle').value = 'all';
+            applyFilters();
+        }
+
+        // Close menus on click outside
+        document.addEventListener('click', function(event) {
+            const filterMenu = document.getElementById('filterMenu');
+            const filterBtn = document.querySelector('button[onclick="toggleFilterMenu()"]');
+            
+            const profileMenu = document.getElementById('profileMenu');
+            const profileBtn = document.querySelector('button[onclick="toggleProfileMenu()"]');
+            
+            // Close Filter Menu
+            if (filterMenu && !filterMenu.classList.contains('hidden') && !filterMenu.contains(event.target) && !filterBtn.contains(event.target)) {
+                filterMenu.classList.add('hidden');
+            }
+
+            // Close Profile Menu
+            if (profileMenu && !profileMenu.classList.contains('hidden') && !profileMenu.contains(event.target) && !profileBtn.contains(event.target)) {
+                profileMenu.classList.add('hidden');
+            }
+        });
+
+     
+     
+        // --- Drawer Logic ---
+        let currentRow = null;
+
+        function openDrawer(row) {
+            currentRow = row;
+            const drawer = document.getElementById('driverDrawer');
+            
+            // 1. Get Data Key
+           // const id = row.cells[0].innerText.trim();
+           // const data = driversData[id];
+
+            if (!data) return;
+
+            // 2. Populate Header & Summary
+            document.getElementById('drawer-id').innerText = id;
+            document.getElementById('drawer-name').innerText = data.name;
+            document.getElementById('drawer-initials').innerText = data.initials;
+            document.getElementById('drawer-role').innerText = data.role;
+            document.getElementById('drawer-email').innerHTML = `<i class="fas fa-envelope mr-1"></i> ${data.email}`;
+
+            // 3. Populate Checklist
+            const checklistContainer = document.getElementById('drawer-checklist');
+            checklistContainer.innerHTML = ''; 
+            
+            data.checklist.forEach(item => {
+                let statusHtml = '';
+                let bgClass = '';
+                let borderClass = '';
+                
+                if (item.status === 'passed') {
+                    statusHtml = `<span class="text-[10px] text-green-600 dark:text-green-400 font-mono">PASSED</span>`;
+                    bgClass = 'bg-green-50 dark:bg-green-900/10';
+                    borderClass = 'border-green-200 dark:border-green-900/30';
+                } else if (item.status === 'failed') {
+                    statusHtml = `<span class="text-[10px] text-red-600 dark:text-red-400 font-mono">FAILED</span>`;
+                    bgClass = 'bg-red-50 dark:bg-red-900/10';
+                    borderClass = 'border-red-200 dark:border-red-900/30';
+                } else if (item.status === 'pending') {
+                    statusHtml = `<span class="text-[10px] text-yellow-600 dark:text-yellow-400 font-mono bg-yellow-100 dark:bg-yellow-900/20 px-2 py-0.5 rounded">REVIEW</span>`;
+                    bgClass = 'bg-white dark:bg-slate-800';
+                    borderClass = 'border-slate-200 dark:border-slate-700';
+                } else {
+                    statusHtml = `<span class="text-[10px] text-slate-500 font-mono">IN PROGRESS</span>`;
+                    bgClass = 'bg-white dark:bg-slate-800';
+                    borderClass = 'border-slate-200 dark:border-slate-700';
+                }
+
+                const checkItem = `
+                    <div class="flex items-center justify-between p-3 rounded-lg border ${borderClass} ${bgClass}">
+                        <div class="flex items-center">
+                            <i class="fas ${item.status === 'passed' ? 'fa-check-circle text-green-500' : (item.status === 'failed' ? 'fa-times-circle text-red-500' : 'fa-circle text-slate-300')} mr-3"></i>
+                            <span class="text-sm text-slate-700 dark:text-slate-300">${item.label}</span>
+                        </div>
+                        ${statusHtml}
+                    </div>
+                `;
+                checklistContainer.innerHTML += checkItem;
+            });
+
+            // 4. Populate Documents
+            const docsContainer = document.getElementById('drawer-docs');
+            docsContainer.innerHTML = '';
+            
+            data.docs.forEach(doc => {
+                const docItem = `
+                    <div class="group relative rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden h-32 bg-slate-100 dark:bg-slate-800 flex items-center justify-center cursor-pointer hover:border-brand-500 transition-colors">
+                        <i class="fas ${doc.icon} text-3xl ${doc.error ? 'text-red-400' : 'text-slate-400'} group-hover:text-brand-500 transition-colors"></i>
+                        <span class="absolute bottom-2 text-[10px] text-slate-500">${doc.name}</span>
+                        <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="text-white text-xs"><i class="fas fa-eye"></i> View</button>
+                        </div>
+                    </div>
+                `;
+                docsContainer.innerHTML += docItem;
+            });
+            
+            // 5. Adjust Actions based on current status
+            const status = row.getAttribute('data-status');
+            const actionsDiv = document.getElementById('drawer-actions');
+            
+            if(status === 'pending') {
+                actionsDiv.innerHTML = `
+                    <button onclick="rejectDriver()" class="flex-1 px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors uppercase tracking-wide">
+                        <i class="fas fa-times mr-2"></i> Reject
+                    </button>
+                    <button onclick="approveDriver()" class="flex-1 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold uppercase tracking-wide transition-colors shadow-lg shadow-brand-500/20">
+                        <i class="fas fa-check mr-2"></i> Approve Driver
+                    </button>
+                `;
+            } else if (status === 'approved') {
+                actionsDiv.innerHTML = `
+                    <button onclick="suspendDriver()" class="flex-1 px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-yellow-200 dark:border-yellow-900/30 text-yellow-600 dark:text-yellow-400 text-xs font-bold hover:bg-yellow-50 dark:hover:bg-yellow-900/10 transition-colors uppercase tracking-wide">
+                        <i class="fas fa-ban mr-2"></i> Suspend
+                    </button>
+                `;
+            } else if (status === 'rejected') {
+                actionsDiv.innerHTML = `
+                    <button onclick="reviewDriver()" class="w-full px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-brand-200 dark:border-brand-900/30 text-brand-600 dark:text-brand-400 text-xs font-bold hover:bg-brand-50 dark:hover:bg-brand-900/10 transition-colors uppercase tracking-wide">
+                        <i class="fas fa-undo mr-2"></i> Review Application
+                    </button>
+                `;
+            } else if (status === 'suspended') {
+                actionsDiv.innerHTML = `
+                    <button onclick="reactivateDriver()" class="w-full px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold uppercase tracking-wide transition-colors shadow-lg shadow-brand-500/20">
+                        <i class="fas fa-key mr-2"></i> Reactivate Account
+                    </button>
+                `;
+            } else {
+                actionsDiv.innerHTML = `<p class="text-xs text-slate-500 w-full text-center">No actions available</p>`;
+            }
+
+            drawer.classList.remove('translate-x-full');
+        }
+
+        function closeDrawer() {
+            document.getElementById('driverDrawer').classList.add('translate-x-full');
+        }
+
+        // --- Custom Action Modal & Toast Logic ---
+        let actionCallback = null;
+
+        function showActionModal({ title, message, iconClass, iconBg, btnClass, btnText, isInput, onConfirm }) {
+            document.getElementById('actionTitle').innerText = title;
+            document.getElementById('actionMessage').innerText = message;
+            
+            const iconEl = document.getElementById('actionIcon');
+            iconEl.className = `w-10 h-10 rounded-full flex items-center justify-center mr-3 ${iconBg}`;
+            iconEl.innerHTML = `<i class="fas ${iconClass}"></i>`;
+            
+            const confirmBtn = document.getElementById('actionConfirmBtn');
+            confirmBtn.className = `px-4 py-2 text-white text-xs font-bold rounded-lg transition-colors shadow-lg ${btnClass}`;
+            confirmBtn.innerText = btnText;
+
+            const inputContainer = document.getElementById('actionInputContainer');
+            if (isInput) {
+                inputContainer.classList.remove('hidden');
+                document.getElementById('actionInput').value = '';
+            } else {
+                inputContainer.classList.add('hidden');
+            }
+
+            actionCallback = onConfirm;
+            document.getElementById('actionModal').classList.remove('hidden');
+        }
+
+        function closeActionModal() {
+            document.getElementById('actionModal').classList.add('hidden');
+            actionCallback = null;
+        }
+
+        document.getElementById('actionConfirmBtn').addEventListener('click', () => {
+            if (actionCallback) actionCallback();
+            closeActionModal();
+        });
+
+        function showToast(title, message, type = 'success') {
+            const toast = document.getElementById('toastNotification');
+            const icon = document.getElementById('toastIcon');
+            const titleEl = document.getElementById('toastTitle');
+            const msgEl = document.getElementById('toastMessage');
+
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+
+            if (type === 'success') {
+                toast.className = 'fixed bottom-6 right-6 z-[70] flex items-center p-4 rounded-lg shadow-2xl border-l-4 border-green-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white animate-fade-in-up max-w-sm';
+                icon.className = 'fas fa-check-circle text-lg mr-3 text-green-500';
+            } else {
+                toast.className = 'fixed bottom-6 right-6 z-[70] flex items-center p-4 rounded-lg shadow-2xl border-l-4 border-red-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white animate-fade-in-up max-w-sm';
+                icon.className = 'fas fa-times-circle text-lg mr-3 text-red-500';
+            }
+
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // --- Rewritten Action Functions ---
+        async function approveDriver() {
+  if (!currentRow) return;
+
+  const id = currentRow.getAttribute("data-id");
+
+  await fetch(`${API_URL}/api/manager/drivers/${id}/approve`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + managerToken
+    }
+  });
+
+  closeDrawer();
+  loadDrivers("pending");
+  showToast("Approved", "Driver approved successfully");
+}
+
+       async function rejectDriver() {
+  if (!currentRow) return;
+
+  const id = currentRow.getAttribute("data-id");
+  const reason = document.getElementById("actionInput").value;
+
+  await fetch(`${API_URL}/api/manager/drivers/${id}/reject`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + managerToken
+    },
+    body: JSON.stringify({ reason })
+  });
+
+  closeDrawer();
+  loadDrivers("pending");
+  showToast("Rejected", "Driver rejected");
+}
+        function reviewDriver() {
+            if(!currentRow) return;
+            showActionModal({
+                title: 'Review Application',
+                message: 'Move this application back to the "Pending" queue for re-evaluation?',
+                iconClass: 'fa-undo',
+                iconBg: 'bg-brand-100 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400',
+                btnClass: 'bg-brand-600 hover:bg-brand-500',
+                btnText: 'Re-open Review',
+                isInput: false,
+                onConfirm: () => {
+                    currentRow.setAttribute('data-status', 'pending');
+                    currentRow.cells[5].innerHTML = `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-yellow-100 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/20"><i class="fas fa-clock mr-1"></i> Review Needed</span>`;
+                    currentRow.cells[6].innerHTML = `<button class="text-brand-600 hover:text-brand-500 text-xs font-medium px-3 py-1 rounded-md bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-900/30 transition-colors">Review</button>`;
+                    currentRow.classList.add('hidden'); 
+                    closeDrawer();
+                    showToast('Application Re-opened', 'Driver moved to pending list.', 'success');
+                }
+            });
+        }
+
+        function suspendDriver() {
+            if(!currentRow) return;
+            showActionModal({
+                title: 'Suspend Driver',
+                message: 'Are you sure you want to suspend this driver? They will lose access to the platform immediately.',
+                iconClass: 'fa-ban',
+                iconBg: 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400',
+                btnClass: 'bg-yellow-600 hover:bg-yellow-500',
+                btnText: 'Suspend Account',
+                isInput: true,
+                onConfirm: () => {
+                    // Update Row Logic
+                    currentRow.setAttribute('data-status', 'suspended');
+                    
+                    // Update Visuals in Table Row (Status Badge)
+                    currentRow.cells[5].innerHTML = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">Suspended</span>`;
+                    
+                    // Hide row if we are currently on the 'Approved' tab (since it moved to Suspended)
+                    // If we were on 'All' (not implemented here but common), we'd keep it visible.
+                    // Given the tab logic filters by strict equality, we hide it.
+                    currentRow.classList.add('hidden'); 
+                    
+                    closeDrawer();
+                    showToast('Driver Suspended', 'Access revoked successfully.', 'success');
+                }
+            });
+        }
+
+        function reactivateDriver() {
+            if(!currentRow) return;
+            showActionModal({
+                title: 'Reactivate Driver',
+                message: 'Restore full access for this driver? They will be moved back to the Approved list.',
+                iconClass: 'fa-key',
+                iconBg: 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400',
+                btnClass: 'bg-green-600 hover:bg-green-500',
+                btnText: 'Reactivate',
+                isInput: false,
+                onConfirm: () => {
+                    // Update Row Logic
+                    currentRow.setAttribute('data-status', 'approved');
+                    
+                    // Update Visuals
+                    currentRow.cells[5].innerHTML = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/20">Approved</span>`;
+                    
+                    currentRow.classList.add('hidden'); // Hide from 'Suspended' tab
+                    closeDrawer();
+                    showToast('Driver Reactivated', 'Access restored successfully.', 'success');
+                }
+            });
+        }
+
+    </script>
+
+    <script>
+const API_URL = "http://localhost:5000";
+const managerToken = localStorage.getItem("managerToken");
+
+async function loadDrivers(status = "pending") {
+  const table = document.getElementById("driversTable");
+
+  try {
+    const res = await fetch(`${API_URL}/api/manager/drivers/${status}`,
+      {
+        headers: {
+          Authorization: "Bearer " + managerToken
+        }
+      }
+    );
+
+    const drivers = await res.json();
+
+    if (!Array.isArray(drivers) || drivers.length === 0) {
+      table.innerHTML = `
+        <tr>
+          <td colspan="7" class="px-6 py-8 text-center text-slate-400">
+            No ${status} drivers
+          </td>
+        </tr>`;
+      return;
+    }
+
+    table.innerHTML = "";
+
+    drivers.forEach(driver => {
+      const row = document.createElement("tr");
+      row.className = "driver-row table-row-hover bg-white dark:bg-slate-800/20";
+      row.setAttribute("data-status", driver.status);
+      row.setAttribute("data-id", driver._id);
+
+      row.innerHTML = `
+        <td class="px-6 py-4 font-mono text-xs text-brand-600">#${driver._id.slice(-6)}</td>
+        <td class="px-6 py-4">
+          <div class="text-sm font-medium text-slate-900 dark:text-white">
+            ${driver.name}
+          </div>
+          <div class="text-[10px] text-slate-500">
+            Joined recently
+          </div>
+        </td>
+        <td class="px-6 py-4 text-xs text-slate-500">
+          ${driver.email || "—"}<br>${driver.phone}
+        </td>
+        <td class="px-6 py-4 text-xs font-mono">Unassigned</td>
+        <td class="px-6 py-4">
+          <span class="text-xs text-yellow-500">Pending</span>
+        </td>
+        <td class="px-6 py-4">
+          <span class="text-xs text-yellow-500">Pending</span>
+        </td>
+        <td class="px-6 py-4 text-right">
+          <button
+  onclick="openDrawer(this.closest('tr'))"
+  class="text-brand-600 text-xs font-bold"
+>
+  Review
+</button>
+        </td>
+      `;
+
+      table.appendChild(row);
+    });
+
+  } catch (err) {
+    table.innerHTML = `
+      <tr>
+        <td colspan="7" class="px-6 py-8 text-center text-red-500">
+          Server error
+        </td>
+      </tr>`;
+  }
+}
+
+loadDrivers("pending");
+</script>
+
+
+</body>
+</html>

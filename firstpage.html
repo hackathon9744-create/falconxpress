@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiSync - Unified Smart Logistics</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            cyan: '#00f3ff',
+                            dark: '#0a0a12',
+                            panel: 'rgba(255, 255, 255, 0.05)',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f3ff; }
+
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .dark .glass {
+            background: rgba(10, 10, 18, 0.7);
+            border: 1px solid rgba(0, 243, 255, 0.1);
+        }
+        .light-glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        /* Neon Glow */
+        .neon-text { text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); }
+
+        /* Page Transitions */
+        .page-element { transition: opacity 0.8s ease, transform 0.8s ease; }
+        .hidden-page {
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            transform: scale(0.95);
+        }
+        .visible-page {
+            opacity: 1;
+            pointer-events: auto;
+            position: relative;
+            z-index: 10;
+            transform: scale(1);
+        }
+        
+        /* Body Fade Out for Navigation */
+        body.fade-out-active {
+            opacity: 0;
+        }
+
+        /* Loader Line */
+        .loader-line {
+            width: 0%;
+            height: 2px;
+            background: #00f3ff;
+            transition: width 5s linear;
+        }
+        .loader-line.active { width: 100%; }
+
+        /* Initial Body State */
+        body { overflow: hidden; transition: opacity 0.8s ease; }
+    </style>
+</head>
+<body class="font-sans text-gray-900 dark:text-white bg-transparent transition-colors duration-500"></body>
+
+    <!-- Canvas Background -->
+    <canvas id="networkCanvas" class="fixed inset-0 w-full h-full pointer-events-none z-0 opacity-40 dark:opacity-60 transition-opacity duration-1000"></canvas>
+
+    <!-- Theme Toggle -->
+    <button id="themeToggle" class="fixed top-6 right-6 z-50 p-3 rounded-full glass hover:bg-white/10 dark:hover:bg-brand-cyan/20 transition-all duration-300 group">
+        <i class="fas fa-sun text-yellow-500 dark:hidden text-xl"></i>
+        <i class="fas fa-moon text-brand-cyan hidden dark:block text-xl group-hover:shadow-[0_0_15px_#00f3ff]"></i>
+    </button>
+
+    <!-- App Container -->
+    <div id="app" class="relative z-10 w-full h-screen flex flex-col justify-center items-center">
+
+        <!-- INTRO SCREEN -->
+        <div id="introScreen" class="page-element visible-page flex flex-col items-center justify-center w-full h-full absolute inset-0 text-center px-4">
+            
+            <div class="relative mb-8 animate-float">
+                <div class="w-24 h-24 md:w-32 md:h-32 rounded-2xl border-2 border-brand-cyan/30 flex items-center justify-center mb-6 relative overflow-hidden backdrop-blur-md">
+                    <div class="absolute inset-0 bg-brand-cyan/10"></div>
+                    <i class="fas fa-cube text-4xl md:text-6xl text-brand-cyan neon-text"></i>
+                    <div class="absolute top-0 left-0 w-full h-1 bg-brand-cyan/50 shadow-[0_0_15px_#00f3ff] animate-[scan_2s_linear_infinite]" style="animation: scan 3s ease-in-out infinite;"></div>
+                </div>
+            </div>
+
+            <h1 class="font-display text-5xl md:text-7xl font-bold tracking-tighter mb-4 opacity-0 animate-fade-in-up" style="animation-delay: 0.2s;">
+                Logi<span class="text-brand-cyan">Sync</span>
+            </h1>
+            
+            <p class="text-lg md:text-xl text-gray-500 dark:text-gray-400 tracking-widest uppercase mb-12 opacity-0 animate-fade-in-up" style="animation-delay: 0.4s;">
+                Unified Smart Logistics Platform
+            </p>
+
+            <!-- Loading Progress -->
+            <div class="w-64 h-1 bg-gray-300 dark:bg-gray-800 rounded-full overflow-hidden opacity-0 animate-fade-in-up" style="animation-delay: 0.6s;">
+                <div id="progressBar" class="loader-line"></div>
+            </div>
+
+            <!-- Skip Button -->
+            <button id="skipBtn" class="absolute bottom-10 right-10 text-sm font-semibold tracking-wider text-gray-500 dark:text-gray-400 hover:text-brand-cyan transition-colors uppercase flex items-center gap-2 group">
+                Skip Intro
+                <i class="fas fa-chevron-right group-hover:translate-x-1 transition-transform"></i>
+            </button>
+        </div>
+
+        <!-- Background Video -->
+<video
+  id="bgVideo"
+  autoplay
+  muted
+  loop
+  playsinline
+  class="fixed inset-0 w-full h-full object-cover z-[-20]"
+>
+  <source src="assets/bg-video.mp4" type="video/mp4">
+</video>
+
+<!-- Dark Overlay (for readability) -->
+<div class="fixed inset-0 bg-black/60 z-[-10]"></div>
+
+
+        <!-- ROLE SELECTION SCREEN -->
+        <div id="roleScreen" class="page-element hidden-page w-full h-full flex flex-col items-center justify-center p-6">
+            
+            <div class="text-center mb-12 animate-fade-in-up">
+                <div class="inline-flex items-center gap-2 mb-2 px-3 py-1 rounded-full border border-brand-cyan/30 bg-brand-cyan/5 text-xs font-display tracking-widest text-brand-cyan uppercase">
+                    <span class="w-2 h-2 rounded-full bg-brand-cyan animate-pulse"></span> System Online
+                </div>
+                <h2 class="font-display text-4xl md:text-5xl font-bold mb-4 dark:text-white text-gray-900">Select Identity</h2>
+                <p class="text-gray-500 dark:text-gray-400 max-w-md mx-auto">Authenticate to access the logistics neural network.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl px-4">
+
+                <!-- Manager Card (Formerly Shipper) -->
+                <div class="group relative cursor-pointer" onclick="navigateTo('manager.html')">
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-brand-cyan to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-75 transition duration-500"></div>
+                    <div class="relative h-full glass dark:glass light-glass p-8 rounded-2xl flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300">
+                        <div class="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <!-- Icon: Fleet/Management -->
+                            <i class="fas fa-boxes-packing text-2xl text-blue-500 group-hover:text-brand-cyan"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold font-display mb-2">Manager</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Manage fleet, shipments, payments, and view global analytics.</p>
+                        <div class="mt-auto w-full border-t border-gray-200 dark:border-white/10 pt-4 flex justify-between items-center text-sm font-semibold text-blue-500">
+                            <span>Access Dashboard</span>
+                            <i class="fas fa-arrow-right opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Driver Card (Formerly Carrier) -->
+                <div class="group relative cursor-pointer" onclick="navigateTo('driver.html')">
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur opacity-25 group-hover:opacity-75 transition duration-500"></div>
+                    <div class="relative h-full glass dark:glass light-glass p-8 rounded-2xl flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300">
+                        <div class="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <!-- Icon: Truck/GPS -->
+                            <i class="fas fa-truck-fast text-2xl text-purple-500"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold font-display mb-2">Driver</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Start trip, access GPS navigation, and upload Proof of Delivery (PoD).</p>
+                        <div class="mt-auto w-full border-t border-gray-200 dark:border-white/10 pt-4 flex justify-between items-center text-sm font-semibold text-purple-500">
+                            <span>Start Route</span>
+                            <i class="fas fa-arrow-right opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- People/Customer Card (Formerly Admin) -->
+                <div class="group relative cursor-pointer" onclick="navigateTo('customer.html')">
+
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-75 transition duration-500"></div>
+                    <div class="relative h-full glass dark:glass light-glass p-8 rounded-2xl flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300">
+                        <div class="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <!-- Icon: People/Tracking -->
+                            <i class="fas fa-users-viewfinder text-2xl text-emerald-500"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold font-display mb-2">Customer</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Track parcels, view live ETA, and see driver details.</p>
+                        <div class="mt-auto w-full border-t border-gray-200 dark:border-white/10 pt-4 flex justify-between items-center text-sm font-semibold text-emerald-500">
+                            <span>Track Shipment</span>
+                            <i class="fas fa-arrow-right opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all"></i>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="mt-12 text-center animate-fade-in-up" style="animation-delay: 0.2s;">
+                 <p class="text-xs text-gray-400 dark:text-gray-600 uppercase tracking-widest">© 2025 LogiSync Corp. Secure Connection.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // --- Navigation Logic ---
+        function navigateTo(url) {
+            // Smooth fade out before redirect
+            document.body.classList.add('fade-out-active');
+            
+            setTimeout(() => {
+                window.location.href = url;
+            }, 800);
+        }
+
+        // --- Core Transition Logic ---
+        const introScreen = document.getElementById('introScreen');
+        const roleScreen = document.getElementById('roleScreen');
+        const skipBtn = document.getElementById('skipBtn');
+        const progressBar = document.getElementById('progressBar');
+        
+        let transitionTimer;
+        let isTransitioned = false;
+
+        function transitionToRoles() {
+            if (isTransitioned) return;
+            isTransitioned = true;
+
+            // 1. Fade out intro
+            introScreen.classList.remove('visible-page');
+            introScreen.classList.add('hidden-page');
+            
+            setTimeout(() => {
+                // 2. Show roles
+                roleScreen.classList.remove('hidden-page');
+                roleScreen.classList.add('visible-page');
+
+                // 3. Enable scrolling
+                document.body.style.overflow = 'auto';
+            }, 800); // Matches CSS transition duration
+        }
+
+        // --- Initialization ---
+        window.addEventListener('load', () => {
+            // Animate progress bar
+            setTimeout(() => progressBar.classList.add('active'), 100);
+
+            // Set Auto Transition (5 seconds)
+            transitionTimer = setTimeout(transitionToRoles, 5000);
+
+            // Skip Button Interaction
+            skipBtn.addEventListener('click', () => {
+                clearTimeout(transitionTimer);
+                transitionToRoles();
+            });
+        });
+
+        // --- Theme Toggle Logic ---
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+        });
+
+        // --- Background Canvas Animation (IIFE for scope safety) ---
+        (function() {
+            const canvas = document.getElementById('networkCanvas');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+            
+            // Config
+            const particleCount = 60;
+            const connectionDistance = 150;
+            
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height;
+                    this.vx = (Math.random() - 0.5) * 0.5;
+                    this.vy = (Math.random() - 0.5) * 0.5;
+                    this.size = Math.random() * 2 + 1;
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x < 0 || this.x > width) this.vx *= -1;
+                    if (this.y < 0 || this.y > height) this.vy *= -1;
+                }
+                draw() {
+                    const isDark = html.classList.contains('dark');
+                    ctx.fillStyle = isDark ? 'rgba(0, 243, 255, 0.7)' : 'rgba(0, 0, 0, 0.3)';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function initParticles() {
+                particles = [];
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push(new Particle());
+                }
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+                const isDark = html.classList.contains('dark');
+                const lineColor = isDark ? 'rgba(0, 243, 255, ' : 'rgba(0, 0, 0, ';
+
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+
+                    for (let j = i; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance < connectionDistance) {
+                            ctx.beginPath();
+                            const opacity = 1 - (distance / connectionDistance);
+                            ctx.strokeStyle = lineColor + (opacity * 0.15) + ')';
+                            ctx.lineWidth = 1;
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+            initParticles();
+            animate();
+        })();
+    </script>
+    <script>
+  function navigateTo(page) {
+    // Smooth fade-out before navigation (optional but premium)
+    document.body.style.opacity = "0";
+
+    setTimeout(() => {
+      window.location.href = page;
+    }, 300);
+  }
+</script>
+<script>
+  const bgVideo = document.getElementById("bgVideo");
+
+  function transitionToRoles() {
+    if (isTransitioned) return;
+    isTransitioned = true;
+
+    // Fade intro
+    introScreen.classList.remove('visible-page');
+    introScreen.classList.add('hidden-page');
+
+    // Pause video after intro
+    setTimeout(() => {
+      bgVideo.pause();
+      roleScreen.classList.remove('hidden-page');
+      roleScreen.classList.add('visible-page');
+      document.body.style.overflow = 'auto';
+    }, 800);
+  }
+</script>
+</body>
+</html>

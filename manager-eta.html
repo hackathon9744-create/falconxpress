@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiSync - Manager Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for Forecasts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Enable class-based dark mode
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            blue: 'var(--brand-blue)',
+                            cyan: 'var(--brand-cyan)',
+                            teal: 'var(--brand-teal)',
+                            bg: 'var(--brand-bg)',
+                            card: 'var(--brand-card)',
+                            text: 'var(--brand-text)',
+                            muted: 'var(--brand-muted)',
+                            border: 'var(--brand-border)',
+                            danger: '#ef4444',
+                            warning: '#f59e0b',
+                            success: '#22c55e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* CSS Variables for Theming */
+        :root {
+            --brand-blue: #2563eb;
+            --brand-cyan: #06b6d4;
+            --brand-teal: #0d9488;
+            --brand-bg: #f8fafc;       /* Slate 50 */
+            --brand-card: #ffffff;     /* White */
+            --brand-text: #0f172a;     /* Slate 900 */
+            --brand-muted: #64748b;    /* Slate 500 */
+            --brand-border: #e2e8f0;   /* Slate 200 */
+        }
+
+        /* Dark Mode Overrides */
+        .dark {
+            --brand-blue: #3b82f6;     /* Blue 500 (lighter) */
+            --brand-cyan: #22d3ee;     /* Cyan 400 */
+            --brand-teal: #14b8a6;     /* Teal 500 */
+            --brand-bg: #0f172a;       /* Slate 900 */
+            --brand-card: #1e293b;     /* Slate 800 */
+            --brand-text: #f1f5f9;     /* Slate 100 */
+            --brand-muted: #94a3b8;    /* Slate 400 */
+            --brand-border: #334155;   /* Slate 700 */
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Dashboard Card Base Style */
+        .dash-card {
+            background-color: var(--brand-card);
+            border: 1px solid var(--brand-border);
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+            color: var(--brand-text);
+        }
+        .dash-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+            border-color: var(--brand-muted);
+        }
+        .dark .dash-card:hover {
+             box-shadow: none;
+             border-color: var(--brand-blue);
+        }
+
+        /* Status Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .badge-blue { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .badge-green { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .badge-orange { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+        .badge-red { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        
+        /* Dark Mode Badges */
+        .dark .badge-blue { background: #1e3a8a; color: #dbeafe; border-color: #1e40af; }
+        .dark .badge-green { background: #14532d; color: #dcfce7; border-color: #166534; }
+        .dark .badge-orange { background: #7c2d12; color: #ffedd5; border-color: #9a3412; }
+        .dark .badge-red { background: #7f1d1d; color: #fee2e2; border-color: #991b1b; }
+
+        /* Map Simulation Styles */
+        .map-container {
+            background-color: #e2e8f0;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            position: relative;
+            overflow: hidden;
+        }
+        .dark .map-container {
+            background-color: #0f172a;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231e293b' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        .map-vehicle {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.3s;
+            z-index: 10;
+        }
+        .map-vehicle:hover { transform: scale(1.2); z-index: 20; }
+        .map-vehicle i { font-size: 10px; }
+        
+        /* Tooltip logic */
+        .vehicle-tooltip {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            width: 180px;
+            display: none;
+            font-size: 0.75rem;
+            border: 1px solid #e2e8f0;
+            z-index: 30;
+        }
+        .dark .vehicle-tooltip {
+            background: #1e293b;
+            border-color: #334155;
+            color: #f1f5f9;
+        }
+        .map-vehicle:hover .vehicle-tooltip { display: block; }
+
+        /* Animations */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .animate-ring-red { animation: pulse-ring 2s infinite; }
+
+        /* Sidebar Active Link Style */
+        .nav-link.active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-right: 3px solid #2563eb;
+        }
+        .nav-link:hover:not(.active) {
+            background-color: #f8fafc;
+            color: #2563eb;
+        }
+        /* Dark Sidebar Links */
+        .dark .nav-link.active {
+            background-color: #1e3a8a;
+            color: #60a5fa;
+            border-right-color: #60a5fa;
+        }
+        .dark .nav-link:hover:not(.active) {
+            background-color: #1e293b;
+            color: #60a5fa;
+        }
+
+        /* Input Styles */
+        .calc-input {
+            width: 100%;
+            border: 1px solid var(--brand-border);
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            color: var(--brand-text);
+            background: var(--brand-bg);
+            transition: all 0.2s;
+        }
+        .calc-input:focus {
+            outline: none;
+            border-color: var(--brand-blue);
+            background: var(--brand-card);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+        .dark .calc-input:focus {
+            background: #0f172a;
+        }
+        .calc-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--brand-muted);
+            margin-bottom: 2px;
+            display: block;
+        }
+
+    </style>
+</head>
+<body class="bg-brand-bg text-brand-text font-sans antialiased min-h-screen transition-colors duration-300">
+
+    <!-- 1️⃣ MOBILE HEADER (Visible on small screens) -->
+    <div class="lg:hidden fixed top-0 left-0 w-full bg-brand-card border-b border-brand-border shadow-sm z-50 px-6 py-4 flex justify-between items-center transition-colors duration-300">
+        <div class="font-bold text-lg text-brand-cyan font-display tracking-wider flex items-center gap-2">
+            <i class="fas fa-network-wired"></i> LogiSync
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="toggleTheme()" class="text-gray-500 hover:text-brand-blue dark:text-gray-400 dark:hover:text-brand-cyan">
+                <i class="fas fa-moon dark:hidden"></i>
+                <i class="fas fa-sun hidden dark:inline text-yellow-400"></i>
+            </button>
+            <button class="text-gray-500 hover:text-brand-blue dark:text-gray-400"><i class="fas fa-bars text-xl"></i></button>
+        </div>
+    </div>
+    
+    <!-- 2️⃣ SIDEBAR NAVIGATION (Hidden on mobile, Fixed on Desktop) -->
+    <aside class="hidden lg:flex fixed top-0 left-0 h-full w-64 bg-brand-card border-r border-brand-border z-40 flex-col transition-all duration-300">
+        <!-- Logo Area -->
+        <div class="h-20 flex items-center px-8 border-b border-brand-border">
+            <div class="font-bold text-xl text-brand-cyan font-display tracking-wider flex items-center gap-2">
+                <i class="fas fa-network-wired"></i> LogiSync
+            </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="flex-1 overflow-y-auto py-6 space-y-1">
+            <p class="px-6 text-[10px] font-bold text-brand-muted uppercase tracking-wider mb-2">Main Menu</p>
+            
+            <a href="#" class="nav-link active flex items-center gap-3 px-6 py-3 text-sm font-medium text-brand-muted transition-colors">
+                <i class="fas fa-chart-pie w-5 text-center"></i> Overview
+            </a>
+            <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium text-brand-muted transition-colors">
+                <i class="fas fa-map-marked-alt w-5 text-center"></i> Live Fleet Map
+            </a>
+            <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium text-brand-muted transition-colors">
+                <i class="fas fa-boxes w-5 text-center"></i> Shipments
+            </a>
+            <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium text-brand-muted transition-colors">
+                <i class="fas fa-warehouse w-5 text-center"></i> Warehouses
+            </a>
+            
+            <p class="px-6 text-[10px] font-bold text-brand-muted uppercase tracking-wider mt-6 mb-2">System</p>
+            
+            <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium text-brand-muted transition-colors">
+                <i class="fas fa-wrench w-5 text-center"></i> Maintenance
+            </a>
+            <a href="#" class="nav-link flex items-center gap-3 px-6 py-3 text-sm font-medium text-brand-muted transition-colors">
+                <i class="fas fa-cogs w-5 text-center"></i> Settings
+            </a>
+        </nav>
+
+        <!-- Sidebar Footer / User & Theme Toggle -->
+        <div class="p-4 border-t border-brand-border">
+            <!-- Theme Toggle -->
+            <button onclick="toggleTheme()" class="w-full flex items-center justify-between mb-4 px-3 py-2 text-xs font-bold text-brand-muted bg-brand-bg rounded hover:text-brand-blue transition-colors border border-transparent hover:border-brand-border">
+                <span><i class="fas fa-adjust mr-2"></i> Theme</span>
+                <span class="dark:hidden"><i class="fas fa-moon"></i> Dark</span>
+                <span class="hidden dark:inline"><i class="fas fa-sun text-yellow-400"></i> Light</span>
+            </button>
+
+            <!-- User Profile -->
+            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-brand-bg cursor-pointer transition">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-cyan to-brand-blue flex items-center justify-center text-white font-bold text-xs shadow-md">
+                    AM
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-sm font-bold text-brand-text truncate">Alex M.</p>
+                    <p class="text-[10px] text-brand-muted truncate">Logistics Manager</p>
+                </div>
+                <i class="fas fa-chevron-right text-xs text-brand-muted ml-auto"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <!-- Added lg:ml-64 to push content right on desktop -->
+    <main class="lg:ml-64 pt-20 lg:pt-8 px-6 pb-12 w-auto space-y-6 transition-colors duration-300">
+
+        <!-- 3️⃣ HEADER WITHIN DASHBOARD (Context) -->
+        <div class="flex justify-between items-center mb-2">
+            <div>
+                <h1 class="text-2xl font-bold font-display text-brand-text">Dashboard Overview</h1>
+                <p class="text-sm text-brand-muted">Welcome back, here's what's happening with the fleet today.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-xs text-brand-muted bg-brand-card px-3 py-1 rounded border border-brand-border">
+                    <i class="fas fa-circle text-[8px] text-green-500 mr-2 animate-pulse"></i> System Operational
+                </span>
+                <button class="bg-brand-blue text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-blue-700 transition">
+                    <i class="fas fa-plus mr-1"></i> New Shipment
+                </button>
+            </div>
+        </div>
+
+        <!-- 2️⃣ GLOBAL OVERVIEW (KPI CARDS) -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <!-- KPI 1 -->
+            <div class="dash-card p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-xs text-brand-muted font-bold uppercase">Active Shipments</p>
+                    <i class="fas fa-shipping-fast text-brand-blue opacity-50"></i>
+                </div>
+                <h2 class="text-2xl font-bold font-display">1,248</h2>
+                <p class="text-xs text-brand-success font-semibold mt-1"><i class="fas fa-arrow-up"></i> 4.2% vs yesterday</p>
+            </div>
+            <!-- KPI 2 -->
+            <div class="dash-card p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-xs text-brand-muted font-bold uppercase">On-Time Delivery</p>
+                    <i class="fas fa-check-circle text-brand-teal opacity-50"></i>
+                </div>
+                <h2 class="text-2xl font-bold font-display">94.8%</h2>
+                <p class="text-xs text-brand-success font-semibold mt-1"><i class="fas fa-arrow-up"></i> 0.5% Target Met</p>
+            </div>
+            <!-- KPI 3 -->
+            <div class="dash-card p-4 border-l-4 border-brand-warning">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-xs text-brand-muted font-bold uppercase">Avg ETA Deviation</p>
+                    <i class="fas fa-clock text-brand-warning opacity-50"></i>
+                </div>
+                <h2 class="text-2xl font-bold font-display text-gray-800 dark:text-gray-100">±12 <span class="text-sm text-gray-400 font-sans">min</span></h2>
+                <p class="text-xs text-brand-danger font-semibold mt-1"><i class="fas fa-arrow-down"></i> High Traffic</p>
+            </div>
+            <!-- KPI 4 -->
+            <div class="dash-card p-4 bg-red-50 border-red-100 dark:bg-red-900/20 dark:border-red-900/50">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-xs text-red-800 dark:text-red-400 font-bold uppercase">SLA Risks</p>
+                    <i class="fas fa-exclamation-triangle text-red-500"></i>
+                </div>
+                <h2 class="text-2xl font-bold font-display text-red-600 dark:text-red-400">14</h2>
+                <p class="text-xs text-red-700 dark:text-red-300 mt-1">Requires Intervention</p>
+            </div>
+            <!-- KPI 5 -->
+            <div class="dash-card p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-xs text-brand-muted font-bold uppercase">Fleet Availability</p>
+                    <i class="fas fa-truck text-gray-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold font-display">88%</h2>
+                <p class="text-xs text-brand-warning font-semibold mt-1">3 Vehicles in Maint.</p>
+            </div>
+            <!-- KPI 6 -->
+            <div class="dash-card p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-xs text-brand-muted font-bold uppercase">Warehouse Cap.</p>
+                    <i class="fas fa-warehouse text-purple-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold font-display">76%</h2>
+                <p class="text-xs text-brand-blue font-semibold mt-1">Optimal Range</p>
+            </div>
+        </section>
+
+        <!-- 3️⃣ MAP & ALERTS (SPLIT VIEW) -->
+        <section class="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[500px]">
+            <!-- Live Map -->
+            <div class="lg:col-span-3 dash-card flex flex-col h-full relative overflow-hidden">
+                <div class="absolute top-4 left-4 z-20 bg-brand-card/90 backdrop-blur px-3 py-1 rounded shadow text-xs font-bold border border-brand-border">
+                    <i class="fas fa-satellite-dish text-green-500 animate-pulse mr-1"></i> Live Fleet Tracking
+                </div>
+                
+                <div class="map-container w-full h-full">
+                    <!-- Fake Route SVG Lines -->
+                    <svg class="absolute top-0 left-0 w-full h-full pointer-events-none opacity-30">
+                        <path d="M100 400 Q 250 300 400 350 T 800 200" stroke="var(--brand-blue)" stroke-width="3" fill="none" stroke-dasharray="5,5"/>
+                        <path d="M150 100 Q 400 150 500 250" stroke="var(--brand-cyan)" stroke-width="3" fill="none"/>
+                        <path d="M700 450 Q 750 300 900 300" stroke="#ef4444" stroke-width="3" fill="none"/>
+                    </svg>
+
+                    <!-- Vehicle 1 (Healthy) -->
+                    <div class="map-vehicle border-green-500 text-green-600" style="top: 40%; left: 35%;">
+                        <i class="fas fa-truck"></i>
+                        <div class="vehicle-tooltip">
+                            <div class="font-bold text-gray-800 dark:text-gray-100">Vehicle: VH-102</div>
+                            <div class="text-green-600 dark:text-green-400 font-bold text-[10px]">Status: Healthy</div>
+                            <div class="text-gray-500 dark:text-gray-400 mt-1">ETA: 14:30 (On Time)</div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle 2 (Warning) -->
+                    <div class="map-vehicle border-yellow-500 text-yellow-600" style="top: 25%; left: 60%;">
+                        <i class="fas fa-truck"></i>
+                         <div class="vehicle-tooltip">
+                            <div class="font-bold text-gray-800 dark:text-gray-100">Vehicle: VH-884</div>
+                            <div class="text-yellow-600 dark:text-yellow-400 font-bold text-[10px]">Status: Med Risk</div>
+                            <div class="text-gray-500 dark:text-gray-400 mt-1">Reason: Traffic Delay</div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle 3 (Critical) -->
+                    <div class="map-vehicle border-red-500 text-red-600 animate-ring-red" style="top: 65%; left: 70%;">
+                        <i class="fas fa-wrench"></i>
+                         <div class="vehicle-tooltip">
+                            <div class="font-bold text-gray-800 dark:text-gray-100">Vehicle: VH-901</div>
+                            <div class="text-red-600 dark:text-red-400 font-bold text-[10px]">Status: Critical</div>
+                            <div class="text-gray-500 dark:text-gray-400 mt-1">Issue: Brake Failure Risk</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="absolute bottom-4 right-4 bg-brand-card/90 p-2 rounded shadow text-[10px] space-y-1 z-20">
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-500"></span> Healthy</div>
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> Warning</div>
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span> Critical</div>
+                </div>
+            </div>
+
+            <!-- Alerts Panel -->
+            <div class="dash-card flex flex-col h-full">
+                <div class="p-4 border-b border-brand-border flex justify-between items-center">
+                    <h3 class="font-bold text-brand-text">System Alerts</h3>
+                    <span class="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full dark:bg-red-900 dark:text-red-200">3 New</span>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 space-y-2">
+                    
+                    <!-- Alert Item 1 -->
+                    <div class="p-3 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition cursor-pointer dark:bg-red-900/10 dark:border-red-900/30 dark:hover:bg-red-900/20">
+                        <div class="flex gap-2 items-start">
+                            <i class="fas fa-exclamation-circle text-red-500 mt-1"></i>
+                            <div>
+                                <p class="text-xs font-bold text-red-800 dark:text-red-400">SLA Breach Risk</p>
+                                <p class="text-[10px] text-red-600 dark:text-red-300">Shipment #4920 to Austin is delayed by 4 hours.</p>
+                                <div class="mt-2 flex gap-2">
+                                    <button class="text-[10px] bg-brand-card border border-red-200 px-2 py-1 rounded text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/40">View</button>
+                                    <button class="text-[10px] bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">Expedite</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alert Item 2 -->
+                    <div class="p-3 bg-yellow-50 border border-yellow-100 rounded-lg hover:bg-yellow-100 transition cursor-pointer dark:bg-yellow-900/10 dark:border-yellow-900/30 dark:hover:bg-yellow-900/20">
+                        <div class="flex gap-2 items-start">
+                            <i class="fas fa-warehouse text-yellow-600 mt-1"></i>
+                            <div>
+                                <p class="text-xs font-bold text-yellow-800 dark:text-yellow-400">Warehouse Overflow</p>
+                                <p class="text-[10px] text-yellow-700 dark:text-yellow-300">North Hub reaching 92% capacity.</p>
+                                <button class="mt-2 text-[10px] bg-brand-card border border-yellow-200 px-2 py-1 rounded text-yellow-700 dark:border-yellow-900 dark:text-yellow-300 dark:hover:bg-yellow-900/40">Redirect</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alert Item 3 -->
+                    <div class="p-3 bg-blue-50 border border-blue-100 rounded-lg dark:bg-blue-900/10 dark:border-blue-900/30">
+                        <div class="flex gap-2 items-start">
+                            <i class="fas fa-info-circle text-blue-500 mt-1"></i>
+                            <div>
+                                <p class="text-xs font-bold text-blue-800 dark:text-blue-400">Route Opt. Success</p>
+                                <p class="text-[10px] text-blue-600 dark:text-blue-300">AI saved 450 mins across fleet today.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- 4️⃣ SHIPMENT INTELLIGENCE & CAUSAL INSIGHTS -->
+        <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            
+            <!-- Shipment Table -->
+            <div class="xl:col-span-2 dash-card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-brand-text flex items-center gap-2">
+                        <i class="fas fa-boxes text-brand-cyan"></i> Shipment Intelligence
+                    </h3>
+                    <div class="flex gap-2">
+                        <select class="calc-input !w-auto">
+                            <option>All Warehouses</option>
+                            <option>North Hub</option>
+                            <option>South Hub</option>
+                        </select>
+                        <select class="calc-input !w-auto">
+                            <option>Sort by Risk</option>
+                            <option>Sort by ETA</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-[10px] text-brand-muted font-bold uppercase border-b border-brand-border">
+                                <th class="pb-2">ID</th>
+                                <th class="pb-2">Route</th>
+                                <th class="pb-2">Vehicle</th>
+                                <th class="pb-2">Predicted ETA</th>
+                                <th class="pb-2">Risk Factor</th>
+                                <th class="pb-2">Status</th>
+                                <th class="pb-2">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <!-- Row 1 (UPDATED TO MATCH SAMPLE INPUT) -->
+                            <tr class="border-b border-brand-border hover:bg-brand-bg transition bg-blue-50/20 dark:bg-blue-900/10 border-l-2 border-l-brand-blue">
+                                <td class="py-3 font-mono text-xs font-bold text-brand-muted">#SH-9921</td>
+                                <td class="py-3">
+                                    <div class="flex items-center gap-1 text-xs text-brand-text">
+                                        <span class="font-semibold">NY</span> <i class="fas fa-arrow-right text-[10px] text-brand-muted"></i> <span class="font-semibold">DC</span>
+                                    </div>
+                                    <div class="text-[9px] text-brand-muted">275 km • Highway</div>
+                                </td>
+                                <td class="py-3 text-xs text-brand-muted"><i class="fas fa-truck-moving text-[10px] mr-1"></i> Heavy Truck</td>
+                                <td class="py-3 text-xs font-bold text-brand-text">14:20 <span class="text-[9px] text-orange-500 font-normal">(+25m Traffic)</span></td>
+                                <td class="py-3 text-xs text-orange-500 font-bold">Peak Traffic</td>
+                                <td class="py-3"><span class="badge badge-blue">In Transit</span></td>
+                                <td class="py-3"><button class="text-brand-blue hover:underline text-xs font-bold">Monitor</button></td>
+                            </tr>
+                            <!-- Row 2 -->
+                            <tr class="border-b border-brand-border hover:bg-brand-bg transition bg-red-50/30 dark:bg-red-900/10">
+                                <td class="py-3 font-mono text-xs font-bold text-brand-muted">#SH-4920</td>
+                                <td class="py-3">
+                                    <div class="flex items-center gap-1 text-xs text-brand-text">
+                                        <span class="font-semibold">TX</span> <i class="fas fa-arrow-right text-[10px] text-brand-muted"></i> <span class="font-semibold">FL</span>
+                                    </div>
+                                </td>
+                                <td class="py-3 text-xs text-brand-muted"><i class="fas fa-truck text-[10px] mr-1"></i> VH-901</td>
+                                <td class="py-3 text-xs font-bold text-red-600 dark:text-red-400">19:45 <span class="text-[9px] text-red-500 dark:text-red-300 font-normal">(+4h)</span></td>
+                                <td class="py-3 text-xs text-red-600 dark:text-red-400 font-semibold">Vehicle Breakdown</td>
+                                <td class="py-3"><span class="badge badge-red">SLA Breach</span></td>
+                                <td class="py-3"><button class="text-red-600 dark:text-red-400 hover:underline text-xs font-bold">Intervene</button></td>
+                            </tr>
+                            <!-- Row 3 -->
+                            <tr class="border-b border-brand-border hover:bg-brand-bg transition">
+                                <td class="py-3 font-mono text-xs font-bold text-brand-muted">#SH-1102</td>
+                                <td class="py-3">
+                                    <div class="flex items-center gap-1 text-xs text-brand-text">
+                                        <span class="font-semibold">CA</span> <i class="fas fa-arrow-right text-[10px] text-brand-muted"></i> <span class="font-semibold">NV</span>
+                                    </div>
+                                </td>
+                                <td class="py-3 text-xs text-brand-muted"><i class="fas fa-truck text-[10px] mr-1"></i> VH-332</td>
+                                <td class="py-3 text-xs font-bold text-brand-text">16:00 <span class="text-[9px] text-gray-400 font-normal">(On time)</span></td>
+                                <td class="py-3 text-xs text-orange-500">Weather Warning</td>
+                                <td class="py-3"><span class="badge badge-orange">At Risk</span></td>
+                                <td class="py-3"><button class="text-brand-blue hover:underline text-xs">Details</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Causal Decision Insights / LIVE INFERENCE ENGINE (NOW INTERACTIVE) -->
+            <div class="dash-card p-6 bg-gradient-to-br from-brand-card to-blue-50 dark:to-blue-900/10 border-brand-border relative overflow-hidden flex flex-col h-full">
+                 <!-- Background Icon -->
+                 <i class="fas fa-microchip absolute -bottom-4 -right-4 text-9xl text-blue-100 dark:text-blue-900 opacity-20 pointer-events-none"></i>
+
+                <!-- Header -->
+                <div class="flex items-center justify-between mb-2 relative z-10">
+                    <h3 class="font-bold text-brand-text flex items-center gap-2">
+                        <i class="fas fa-calculator text-brand-blue"></i> Inference Engine
+                    </h3>
+                    <div class="flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        <span class="text-[10px] font-bold text-brand-muted uppercase">Interactive</span>
+                    </div>
+                </div>
+
+                <!-- Main ETA Display -->
+                <div class="text-center py-2 border-b border-brand-border mb-3 relative z-10">
+                    <p class="text-[10px] text-brand-muted uppercase font-bold tracking-wider mb-1">Simulated ETA</p>
+                    <h2 class="text-4xl font-display font-bold text-brand-text"><span id="display-eta">275</span> <span class="text-lg text-brand-muted font-sans">min</span></h2>
+                    <p class="text-[10px] text-green-600 font-bold mt-1 bg-green-50 dark:bg-green-900/20 dark:text-green-400 inline-block px-2 py-0.5 rounded border border-green-100 dark:border-green-900">
+                        Confidence: <span id="display-confidence">92%</span>
+                    </p>
+                </div>
+
+                <!-- Input Parameters Grid -->
+                <div class="grid grid-cols-2 gap-3 relative z-10 flex-1">
+                    
+                    <!-- Distance -->
+                    <div>
+                        <label class="calc-label">Distance (km)</label>
+                        <input type="number" id="input-distance" class="calc-input" value="275.0">
+                    </div>
+                    
+                    <!-- Route -->
+                    <div>
+                        <label class="calc-label">Route Type</label>
+                        <select id="input-route" class="calc-input">
+                            <option value="0" selected>Highway</option>
+                            <option value="1">Urban</option>
+                            <option value="2">Rural</option>
+                        </select>
+                    </div>
+
+                    <!-- Vehicle -->
+                    <div>
+                        <label class="calc-label">Vehicle Type</label>
+                        <select id="input-vehicle" class="calc-input">
+                            <option value="0">Van</option>
+                            <option value="1">Lorry</option>
+                            <option value="2" selected>Heavy Truck</option>
+                        </select>
+                    </div>
+
+                    <!-- Vehicle Age -->
+                    <div>
+                        <label class="calc-label">Vehicle Age (Yrs)</label>
+                        <input type="number" id="input-age" class="calc-input" value="5">
+                    </div>
+
+                    <!-- Traffic -->
+                    <div>
+                        <label class="calc-label">Traffic Level</label>
+                        <select id="input-traffic" class="calc-input">
+                            <option value="0">Low</option>
+                            <option value="1">Medium</option>
+                            <option value="2" selected>Peak / High</option>
+                        </select>
+                    </div>
+
+                    <!-- Weather -->
+                    <div>
+                        <label class="calc-label">Weather</label>
+                        <select id="input-weather" class="calc-input">
+                            <option value="0" selected>Clear</option>
+                            <option value="1">Rain</option>
+                            <option value="2">Storm</option>
+                        </select>
+                    </div>
+
+                    <!-- Warehouse Delay -->
+                    <div>
+                        <label class="calc-label">WH Delay (min)</label>
+                        <input type="number" id="input-delay" class="calc-input" value="10">
+                    </div>
+                    
+                    <!-- Driver Exp -->
+                    <div>
+                        <label class="calc-label">Driver Exp (Yrs)</label>
+                        <input type="number" id="input-exp" class="calc-input" value="7">
+                    </div>
+
+                </div>
+                
+                <button onclick="calculateETA()" class="w-full mt-4 py-2 bg-brand-blue hover:bg-blue-700 text-white font-bold text-xs rounded transition shadow-md relative z-10">
+                    <i class="fas fa-play mr-1"></i> Simulate ETA
+                </button>
+            </div>
+        </section>
+
+        <!-- 5️⃣ DEMAND, WAREHOUSE & VEHICLE HEALTH -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Demand Forecast -->
+            <div class="dash-card p-6">
+                <h3 class="font-bold text-brand-text mb-4 text-sm">Demand Forecast (Next 24h)</h3>
+                <div class="h-40 w-full">
+                    <canvas id="demandChart"></canvas>
+                </div>
+                <div class="mt-4 flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-100 dark:border-blue-900/30">
+                    <div>
+                        <p class="text-[10px] text-brand-muted font-bold uppercase">Suggestion</p>
+                        <p class="text-xs font-bold text-blue-800 dark:text-blue-300">Pre-dispatch 2 trucks to North Hub</p>
+                    </div>
+                    <button class="text-xs bg-blue-600 text-white px-2 py-1 rounded">Approve</button>
+                </div>
+            </div>
+
+            <!-- Warehouse Capacity -->
+            <div class="dash-card p-6">
+                <h3 class="font-bold text-brand-text mb-4 text-sm">Warehouse Capacity</h3>
+                <div class="space-y-4">
+                    <!-- WH 1 -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-bold text-brand-muted">North Hub</span>
+                            <span class="text-red-500 font-bold">92% (High Risk)</span>
+                        </div>
+                        <div class="w-full h-2 bg-brand-bg rounded-full overflow-hidden">
+                            <div class="h-full bg-red-500 w-[92%]"></div>
+                        </div>
+                        <p class="text-[10px] text-brand-muted mt-1">Incoming: 5 trucks (ETA 2h)</p>
+                    </div>
+                    <!-- WH 2 -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-bold text-brand-muted">South Hub</span>
+                            <span class="text-green-600 dark:text-green-400 font-bold">45%</span>
+                        </div>
+                        <div class="w-full h-2 bg-brand-bg rounded-full overflow-hidden">
+                            <div class="h-full bg-green-500 w-[45%]"></div>
+                        </div>
+                    </div>
+                    <!-- WH 3 -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-bold text-brand-muted">East Center</span>
+                            <span class="text-yellow-600 dark:text-yellow-400 font-bold">78%</span>
+                        </div>
+                        <div class="w-full h-2 bg-brand-bg rounded-full overflow-hidden">
+                            <div class="h-full bg-yellow-500 w-[78%]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicle Health -->
+            <div class="dash-card p-6">
+                <h3 class="font-bold text-brand-text mb-4 text-sm">Fleet Maintenance Risk</h3>
+                <div class="flex items-center gap-6">
+                    <!-- Simple CSS Donut -->
+                    <div class="relative w-24 h-24 rounded-full bg-brand-bg flex items-center justify-center"
+                         style="background: conic-gradient(#22c55e 0% 70%, #f59e0b 70% 90%, #ef4444 90% 100%);">
+                         <div class="w-16 h-16 bg-brand-card rounded-full flex flex-col items-center justify-center">
+                             <span class="text-xl font-bold font-display text-brand-text">102</span>
+                             <span class="text-[8px] text-brand-muted uppercase">Total</span>
+                         </div>
+                    </div>
+                    <div class="space-y-2 flex-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="flex items-center gap-1 text-brand-text"><span class="w-2 h-2 rounded-full bg-green-500"></span> Healthy</span>
+                            <span class="font-bold text-brand-text">72</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="flex items-center gap-1 text-brand-text"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> Check-up</span>
+                            <span class="font-bold text-brand-text">25</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="flex items-center gap-1 text-brand-text"><span class="w-2 h-2 rounded-full bg-red-500"></span> Critical</span>
+                            <span class="font-bold text-red-600 dark:text-red-400">5</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-brand-border">
+                    <p class="text-[10px] text-brand-muted">Predicted Downtime Impact:</p>
+                    <p class="text-sm font-bold text-red-500 dark:text-red-400">$2,400 / day potential loss</p>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Script for Charts and Interaction -->
+    <script>
+/* ================================
+   THEME TOGGLE
+================================ */
+function toggleTheme() {
+    const html = document.documentElement;
+    if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+    } else {
+        html.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+    }
+}
+
+if (
+    localStorage.theme === 'dark' ||
+    (!('theme' in localStorage) &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches)
+) {
+    document.documentElement.classList.add('dark');
+} else {
+    document.documentElement.classList.remove('dark');
+}
+
+/* ================================
+   BACKEND CONFIG
+================================ */
+const API_BASE = "http://127.0.0.1:8001";
+
+/* ================================
+   ETA PREDICTION (REAL BACKEND)
+================================ */
+async function calculateETA() {
+    try {
+        const payload = {
+            distance_km: Number(document.getElementById("input-distance").value),
+            route_type: Number(document.getElementById("input-route").value),
+            vehicle_type: Number(document.getElementById("input-vehicle").value),
+            vehicle_age_yrs: Number(document.getElementById("input-age").value),
+            traffic_level: Number(document.getElementById("input-traffic").value),
+            weather_severity: Number(document.getElementById("input-weather").value),
+            warehouse_delay_min: Number(document.getElementById("input-delay").value),
+            driver_experience_yrs: Number(document.getElementById("input-exp").value),
+            cargo_weight_t: 16.5,
+            day_of_week: new Date().getDay(),
+            hour_sin: Math.sin((2 * Math.PI * new Date().getHours()) / 24),
+            hour_cos: Math.cos((2 * Math.PI * new Date().getHours()) / 24),
+            is_peak: [8, 9, 17, 18].includes(new Date().getHours()) ? 1 : 0
+        };
+
+        const res = await fetch(`${API_BASE}/manager/eta/predict`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Backend error");
+
+        const data = await res.json();
+
+        animateValue(
+            "display-eta",
+            parseInt(document.getElementById("display-eta").innerText),
+            Math.round(data.eta_minutes),
+            600
+        );
+
+        document.getElementById("display-confidence").innerText =
+            Math.round(data.confidence) + "%";
+
+    } catch (err) {
+        console.error(err);
+        alert("ETA prediction failed. Check backend.");
+    }
+}
+
+/* ================================
+   NUMBER ANIMATION
+================================ */
+function animateValue(id, start, end, duration) {
+    if (start === end) return;
+
+    const range = end - start;
+    const increment = end > start ? 1 : -1;
+    const stepTime = Math.abs(Math.floor(duration / range));
+    const obj = document.getElementById(id);
+
+    let current = start;
+    const timer = setInterval(() => {
+        current += increment;
+        obj.innerHTML = current;
+        if (current === end) clearInterval(timer);
+    }, stepTime);
+}
+
+/* ================================
+   CHART.JS CONFIG
+================================ */
+let demandChart;
+
+document.addEventListener("DOMContentLoaded", () => {
+    calculateETA();
+
+    const ctx = document.getElementById("demandChart").getContext("2d");
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, "rgba(37, 99, 235, 0.2)");
+    gradient.addColorStop(1, "rgba(37, 99, 235, 0)");
+
+    demandChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"],
+            datasets: [
+                {
+                    label: "Actual Orders",
+                    data: [45, 59, 80, 81, 56, 55, 40],
+                    borderColor: "#2563eb",
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 0
+                },
+                {
+                    label: "Predicted Orders",
+                    data: [48, 62, 85, 90, 60, 58, 52],
+                    borderColor: "#06b6d4",
+                    borderDash: [6, 6],
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10 } }
+                },
+                y: {
+                    display: false
+                }
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html>

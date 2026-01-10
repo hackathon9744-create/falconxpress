@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiSync | Manager Dashboard</title>
+    
+    <!-- Fonts: Inter (Body) and Orbitron (Headers) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons: FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            400: '#22d3ee',
+                            500: '#06b6d4', // Cyan 500
+                            600: '#0891b2',
+                            900: '#0f172a', // Slate 900
+                            950: '#020617', // Slate 950
+                        },
+                        accent: {
+                            red: '#ef4444',
+                            yellow: '#eab308',
+                            green: '#22c55e',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'ping-slow': 'ping 3s cubic-bezier(0, 0, 0.2, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Shared Tech Background */
+        .tech-bg {
+            background-color: #0f172a;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.05) 0px, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+        }
+
+        html:not(.dark) .tech-bg {
+            background-color: #f1f5f9;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.05) 0px, transparent 50%),
+                linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        html:not(.dark) .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(226, 232, 240, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            backdrop-filter: blur(16px);
+        }
+
+        .glass-sidebar {
+            background: rgba(15, 23, 42, 0.95); /* Slightly more opaque for readability */
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        html:not(.dark) .glass-sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-right: 1px solid rgba(203, 213, 225, 0.4);
+        }
+
+        /* Tactical Map Styling */
+        .map-grid {
+            background-size: 40px 40px;
+            /* Default (Dark Mode) - Cyan subtle grid */
+            background-image:
+                linear-gradient(to right, rgba(6, 182, 212, 0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(6, 182, 212, 0.1) 1px, transparent 1px);
+        }
+
+        /* Light Mode Map Grid - Darker lines for visibility */
+        html:not(.dark) .map-grid {
+             background-image:
+                linear-gradient(to right, rgba(148, 163, 184, 0.2) 1px, transparent 1px), /* Slate-400 equivalent */
+                linear-gradient(to bottom, rgba(148, 163, 184, 0.2) 1px, transparent 1px);
+        }
+
+        .map-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 0 10px currentColor;
+        }
+        .map-route {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            opacity: 0.6;
+        }
+        
+        /* Mobile transitions */
+        .sidebar-transition {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- Mouse Glow Effect --- */
+        .hover-glow-card {
+            position: relative;
+            /* Ensure the glow doesn't overflow the rounded corners */
+            overflow: hidden; 
+        }
+
+        /* The Glow Layer */
+        .hover-glow-card::after {
+            content: "";
+            position: absolute;
+            inset: 0; /* top/left/right/bottom: 0 */
+            background: radial-gradient(
+                600px circle at var(--mouse-x) var(--mouse-y),
+                rgba(6, 182, 212, 0.15), /* Brand Cyan with low opacity */
+                transparent 40%
+            );
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 10; /* Sit on top of background but below interactive elements if z-indexed correctly, essentially an overlay */
+        }
+
+        /* Trigger glow on hover */
+        .hover-glow-card:hover::after {
+            opacity: 1;
+        }
+
+        /* Light Mode Adjustment: Make it slightly more visible against white */
+        html:not(.dark) .hover-glow-card::after {
+            background: radial-gradient(
+                600px circle at var(--mouse-x) var(--mouse-y),
+                rgba(6, 182, 212, 0.2), 
+                transparent 40%
+            );
+        }
+    </style>
+</head>
+<body class="tech-bg text-slate-300 antialiased h-screen flex overflow-hidden selection:bg-brand-500 selection:text-white">
+
+    <!-- Mobile Backdrop -->
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-slate-900/80 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
+
+    <!-- 2. SIDEBAR (Drop Side / Drawer) -->
+    <!-- Changed: Fixed positioning for mobile, slide-in transform, always w-64 width for labels -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 glass-sidebar flex flex-col justify-between transform -translate-x-full lg:translate-x-0 lg:static sidebar-transition">
+        <!-- Logo Area -->
+        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-700/50 dark:border-slate-700/50 border-slate-200">
+            <div class="flex items-center">
+                <div class="w-8 h-8 rounded bg-brand-500/20 flex items-center justify-center text-brand-600 dark:text-brand-400 mr-3">
+                    <i class="fas fa-cube"></i>
+                </div>
+                <span class="font-display font-bold text-lg text-slate-900 dark:text-white tracking-wide">
+                    Managers <span class="text-brand-600 dark:text-brand-500">Portal</span>
+                </span>
+            </div>
+            <!-- Mobile Close Button -->
+            <button class="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white" onclick="toggleSidebar()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 py-6 space-y-1 overflow-y-auto">
+            <!-- Dashboard (Active) -->
+            <a href="#" class="flex items-center px-6 py-3 text-brand-600 dark:text-brand-400 bg-brand-500/10 border-r-2 border-brand-500 group relative">
+                <i class="fas fa-truck w-6 text-center text-lg"></i>
+                <span class="ml-3 font-medium">Shipments</span>
+                <div class="absolute inset-0 bg-brand-400/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </a>
+            <a href="#" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-map-marked-alt w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Fleet Map</span>
+            </a>
+            
+            <!-- Drivers (New) -->
+            <a href="#" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-users w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Drivers</span>
+            </a>
+
+            <a href="#" class="flex items-center px-6 py-3 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-wallet w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Payments</span>
+            </a>
+            <a href="#" class="flex items-center px-6 py-3 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-chart-pie w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Analytics</span>
+            </a>
+
+            <!-- Carbon Footprint (New) -->
+            <a href="#" class="flex items-center px-6 py-3 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-leaf w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Carbon Footprint</span>
+            </a>
+
+            <a href="#" class="flex items-center px-6 py-3 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-file-invoice w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Documents</span>
+            </a>
+        </nav>
+
+        <!-- Bottom Actions -->
+        <div class="p-4 border-t border-slate-700/50 space-y-2">
+            <a href="#" class="flex items-center px-2 py-2 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white rounded-lg transition-colors group">
+                <i class="fas fa-cog w-6 text-center"></i>
+                <span class="ml-3 text-sm">Settings</span>
+            </a>
+            <button onclick="window.location.reload()" class="w-full flex items-center px-2 py-2 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white rounded-lg transition-colors group">
+                <i class="fas fa-sign-out-alt w-6 text-center group-hover:text-red-600"></i>
+                <span class="ml-3 text-sm">Log Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <!-- 1. TOP BAR -->
+        <header class="h-16 glass-panel border-b border-slate-200 dark:border-slate-700/50 flex items-center justify-between px-6 z-20 shrink-0 gap-4">
+            <!-- Left: Context -->
+            <div class="flex items-center space-x-4 shrink-0">
+                <!-- Hamburger Menu for Mobile -->
+                <button class="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white focus:outline-none" onclick="toggleSidebar()">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+
+                <h2 class="font-display font-semibold text-lg text-slate-900 dark:text-white tracking-wide">Dashboard</h2>
+                <div class="hidden md:flex items-center px-2.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-xs font-mono">
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                    SYSTEM LIVE
+                </div>
+            </div>
+
+            <!-- Center: Search (Moved here for alignment) -->
+            <div class="hidden md:flex flex-1 justify-center max-w-xl mx-auto">
+                <div class="relative w-full">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs"></i>
+                    <input type="text" placeholder="Search shipment ID..." class="w-full bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all placeholder-slate-400">
+                </div>
+            </div>
+
+            <!-- Right: Global Controls -->
+            <div class="flex items-center space-x-4 shrink-0">
+                <!-- Mobile Search Trigger (Optional, visible if center search is hidden) -->
+                <button class="md:hidden text-slate-500 dark:text-slate-400">
+                    <i class="fas fa-search"></i>
+                </button>
+
+                <!-- Theme Toggle -->
+                <button id="themeToggle" class="w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-brand-500 dark:hover:text-brand-400 hover:border-brand-500/50 transition-all">
+                    <i class="fas fa-moon hidden dark:block text-xs"></i>
+                    <i class="fas fa-sun dark:hidden text-yellow-500 text-xs"></i>
+                </button>
+
+                <!-- Notifications Dropdown (New) -->
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="relative w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-brand-500 dark:hover:text-brand-400 hover:border-brand-500/50 transition-all focus:outline-none">
+                        <i class="fas fa-bell text-xs"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+                    </button>
+
+                    <!-- Notification Menu (Updated: Solid Background) -->
+                    <div id="notificationMenu" class="hidden absolute right-0 mt-3 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none z-50 transform origin-top-right transition-all">
+                        <div class="py-2">
+                            <div class="px-4 py-2 border-b border-slate-200 dark:border-white/10 flex justify-between items-center">
+                                <span class="text-xs font-semibold text-slate-900 dark:text-white">Notifications</span>
+                                <button class="text-[10px] text-brand-600 dark:text-brand-400 hover:underline">Mark all read</button>
+                            </div>
+                            
+                            <div class="max-h-64 overflow-y-auto">
+                                <!-- Item 1 -->
+                                <a href="#" class="block px-4 py-3 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors border-b border-slate-100 dark:border-white/5">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-exclamation-circle text-accent-red mt-0.5"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-xs font-medium text-slate-900 dark:text-white">Shipment #AX234 Delayed</p>
+                                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Traffic congestion on Route 66. ETA +45m.</p>
+                                            <p class="text-[10px] text-slate-400 mt-1">2 min ago</p>
+                                        </div>
+                                    </div>
+                                </a>
+                                <!-- Item 2 -->
+                                <a href="#" class="block px-4 py-3 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors border-b border-slate-100 dark:border-white/5">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-info-circle text-brand-500 mt-0.5"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-xs font-medium text-slate-900 dark:text-white">New Driver Added</p>
+                                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Michael B. has been assigned to Fleet A.</p>
+                                            <p class="text-[10px] text-slate-400 mt-1">1 hour ago</p>
+                                        </div>
+                                    </div>
+                                </a>
+                                 <!-- Item 3 -->
+                                 <a href="#" class="block px-4 py-3 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-check-circle text-accent-green mt-0.5"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-xs font-medium text-slate-900 dark:text-white">System Update Complete</p>
+                                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">LogiSync v4.2.1 is now live.</p>
+                                            <p class="text-[10px] text-slate-400 mt-1">3 hours ago</p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            
+                            <a href="#" class="block text-center px-4 py-2 text-[10px] font-medium text-slate-500 dark:text-slate-400 hover:text-brand-500 dark:hover:text-brand-400 border-t border-slate-200 dark:border-white/10 transition-colors">
+                                View All Notifications
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Dropdown (Updated) -->
+                <div class="relative pl-4 border-l border-slate-200 dark:border-slate-700/50 ml-2">
+                    <button onclick="toggleProfileMenu()" class="flex items-center space-x-3 focus:outline-none group">
+                        <div class="text-right hidden md:block">
+                            <p class="text-xs font-medium text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">Alex Chen</p>
+                            <p class="text-[10px] text-brand-600 dark:text-brand-500 uppercase tracking-wider">Logistics Mgr</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-600 to-blue-600 p-[1px] shadow-sm group-hover:shadow-md transition-shadow">
+                            <div class="w-full h-full rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-white">AC</div>
+                        </div>
+                    </button>
+
+                    <!-- Dropdown Menu (Updated: Solid Background) -->
+                    <div id="profileMenu" class="hidden absolute right-0 mt-3 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none z-50 transform origin-top-right transition-all">
+                        <div class="py-2">
+                            <!-- User Info Header -->
+                            <div class="px-4 py-3 border-b border-slate-200 dark:border-white/10 mb-1">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Signed in as</p>
+                                <p class="text-sm font-medium text-slate-900 dark:text-white truncate">manager@logisync.com</p>
+                            </div>
+                            
+                            <!-- Menu Items -->
+                            <a href="#" class="group flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                                <i class="fas fa-id-card-alt mr-3 w-4 text-center text-slate-400 group-hover:text-brand-500 transition-colors"></i>
+                                Manager Details
+                            </a>
+                            <a href="#" class="group flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                                <i class="fas fa-cog mr-3 w-4 text-center text-slate-400 group-hover:text-brand-500 transition-colors"></i>
+                                Preferences
+                            </a>
+                            
+                            <div class="border-t border-slate-200 dark:border-white/10 my-1"></div>
+                            
+                            <button onclick="window.location.reload()" class="w-full text-left group flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                <i class="fas fa-sign-out-alt mr-3 w-4 text-center group-hover:text-red-600 dark:group-hover:text-red-400"></i>
+                                Log Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- DASHBOARD SCROLL AREA -->
+        <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 space-y-6">
+            
+            <!-- 3. KPI CARDS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                
+                <!-- KPI 1 -->
+                <div class="hover-glow-card glass-panel rounded-xl p-5 relative overflow-hidden group">
+                    <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i class="fas fa-truck-moving text-4xl text-brand-500"></i>
+                    </div>
+                    <h3 class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 relative z-20">Active Shipments</h3>
+                    <div class="flex items-baseline space-x-2 relative z-20">
+                        <span class="font-display text-3xl font-bold text-slate-900 dark:text-white">1,284</span>
+                        <span class="text-xs font-medium text-green-500 dark:text-green-400"><i class="fas fa-arrow-up"></i> 12%</span>
+                    </div>
+                    <!-- Updated Progress Bar: Thicker (h-1.5) and Darker Track (slate-300/slate-600) -->
+                    <div class="w-full bg-slate-300 dark:bg-slate-600 h-1.5 mt-4 rounded-full overflow-hidden relative z-20">
+                        <div class="bg-brand-500 h-full w-[70%]"></div>
+                    </div>
+                </div>
+
+                <!-- KPI 2 -->
+                <div class="hover-glow-card glass-panel rounded-xl p-5 relative overflow-hidden group">
+                    <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i class="fas fa-route text-4xl text-blue-500"></i>
+                    </div>
+                    <h3 class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 relative z-20">Vehicles on Route</h3>
+                    <div class="flex items-baseline space-x-2 relative z-20">
+                        <span class="font-display text-3xl font-bold text-slate-900 dark:text-white">842</span>
+                        <span class="text-xs font-medium text-slate-500">/ 900 Total</span>
+                    </div>
+                    <!-- Updated Progress Bar -->
+                    <div class="w-full bg-slate-300 dark:bg-slate-600 h-1.5 mt-4 rounded-full overflow-hidden relative z-20">
+                        <div class="bg-blue-500 h-full w-[92%]"></div>
+                    </div>
+                </div>
+
+                <!-- KPI 3 (Alert) -->
+                <div class="hover-glow-card glass-panel rounded-xl p-5 relative overflow-hidden group border-accent-red/30">
+                    <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i class="fas fa-clock text-4xl text-accent-red"></i>
+                    </div>
+                    <h3 class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 relative z-20">Delayed Deliveries</h3>
+                    <div class="flex items-baseline space-x-2 relative z-20">
+                        <span class="font-display text-3xl font-bold text-slate-900 dark:text-white">18</span>
+                        <span class="text-xs font-medium text-accent-red animate-pulse">Needs Attention</span>
+                    </div>
+                    <!-- Updated Progress Bar -->
+                    <div class="w-full bg-slate-300 dark:bg-slate-600 h-1.5 mt-4 rounded-full overflow-hidden relative z-20">
+                        <div class="bg-accent-red h-full w-[15%]"></div>
+                    </div>
+                </div>
+
+                <!-- KPI 4 -->
+                <div class="hover-glow-card glass-panel rounded-xl p-5 relative overflow-hidden group">
+                    <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i class="fas fa-money-bill-wave text-4xl text-accent-yellow"></i>
+                    </div>
+                    <h3 class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 relative z-20">Pending Invoices</h3>
+                    <div class="flex items-baseline space-x-2 relative z-20">
+                        <span class="font-display text-3xl font-bold text-slate-900 dark:text-white">$42k</span>
+                        <span class="text-xs font-medium text-accent-yellow">3 Urgent</span>
+                    </div>
+                    <!-- Updated Progress Bar -->
+                    <div class="w-full bg-slate-300 dark:bg-slate-600 h-1.5 mt-4 rounded-full overflow-hidden relative z-20">
+                        <div class="bg-accent-yellow h-full w-[45%]"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROW 2: MAP & ALERTS -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[500px] lg:h-[450px]">
+                
+                <!-- 4. LIVE MAP SECTION -->
+                <div class="lg:col-span-2 glass-panel rounded-xl relative overflow-hidden flex flex-col">
+                    <!-- Background: Darker in dark mode, light grey in light mode to standout from white card -->
+                    <div class="absolute inset-0 bg-slate-50 dark:bg-slate-900/40 z-0"></div>
+                    
+                    <!-- Map Header Overlay -->
+                    <div class="relative z-10 px-5 py-4 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white/50 dark:bg-slate-900/20 backdrop-blur-sm">
+                        <h3 class="font-display font-semibold text-slate-900 dark:text-white tracking-wide">Live Fleet Monitor</h3>
+                        <div class="flex space-x-2">
+                            <span class="flex items-center text-[10px] text-slate-500 dark:text-slate-400"><span class="w-2 h-2 rounded-full bg-brand-500 mr-1"></span> Active</span>
+                            <span class="flex items-center text-[10px] text-slate-500 dark:text-slate-400"><span class="w-2 h-2 rounded-full bg-accent-yellow mr-1"></span> Idle</span>
+                            <span class="flex items-center text-[10px] text-slate-500 dark:text-slate-400"><span class="w-2 h-2 rounded-full bg-accent-red mr-1"></span> Delayed</span>
+                        </div>
+                    </div>
+
+                    <!-- Tactical Map Visualization (CSS/SVG) -->
+                    <div class="flex-1 relative map-grid overflow-hidden group">
+                        <!-- Abstract Continents/Regions -->
+                        <div class="absolute top-1/2 left-1/4 w-64 h-64 border-2 border-slate-300 dark:border-slate-700/30 rounded-full opacity-50"></div>
+                        <div class="absolute top-1/4 right-1/4 w-96 h-96 border border-slate-300 dark:border-slate-700/30 rounded-full opacity-30"></div>
+                        
+                        <!-- Route Lines (Updated for Visibility) -->
+                        <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice">
+                            <path d="M100,300 Q250,100 400,250 T700,300" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4,4" class="text-brand-500 dark:text-brand-400 opacity-60 dark:opacity-40" />
+                            <path d="M150,350 Q300,450 600,300" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4,4" class="text-accent-yellow opacity-60 dark:opacity-40" />
+                            <path d="M600,100 Q650,200 700,300" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4,4" class="text-accent-red opacity-60 dark:opacity-40" />
+                        </svg>
+
+                        <!-- Vehicles (Dots) -->
+                        <!-- Truck 1 (Active) -->
+                        <div class="map-dot bg-brand-500 text-brand-500 top-[35%] left-[45%] animate-pulse-slow">
+                            <div class="absolute -inset-2 bg-brand-500/30 rounded-full animate-ping-slow"></div>
+                            <!-- Tooltip -->
+                            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-slate-600 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                                MH-02 • 45mph
+                            </div>
+                        </div>
+
+                        <!-- Truck 2 (Delayed) -->
+                        <div class="map-dot bg-accent-red text-accent-red top-[20%] left-[68%]">
+                             <div class="absolute -inset-2 bg-accent-red/30 rounded-full animate-ping-slow"></div>
+                             <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-slate-600 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                                KA-19 • Stopped
+                            </div>
+                        </div>
+
+                        <!-- Truck 3 (Idle) -->
+                        <div class="map-dot bg-accent-yellow text-accent-yellow top-[65%] left-[25%]">
+                            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-slate-600 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                                DL-4C • Loading
+                            </div>
+                        </div>
+
+                         <!-- Truck 4 (Active) -->
+                         <div class="map-dot bg-brand-500 text-brand-500 top-[45%] left-[80%] animate-pulse-slow"></div>
+
+                        <!-- HUD Elements -->
+                        <div class="absolute bottom-4 left-4 p-2 bg-slate-900/80 backdrop-blur rounded border border-slate-700 text-[10px] font-mono text-brand-400">
+                            LAT: 34.0522 N <br>
+                            LNG: 118.2437 W
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. ALERTS & ACTIONS PANEL -->
+                <div class="glass-panel rounded-xl flex flex-col overflow-hidden">
+                    <div class="px-5 py-4 border-b border-slate-200 dark:border-white/5 bg-white/50 dark:bg-slate-900/20 backdrop-blur-sm flex justify-between items-center">
+                        <h3 class="font-display font-semibold text-slate-900 dark:text-white tracking-wide">Critical Alerts</h3>
+                        <span class="bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 text-[10px] px-2 py-0.5 rounded-full border border-red-500/30">3 New</span>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto p-4 space-y-3">
+                        <!-- Alert Item 1 -->
+                        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 border-l-2 border-accent-red hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-xs font-bold text-slate-900 dark:text-white">Delay Warning</span>
+                                <span class="text-[10px] text-slate-500">2m ago</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Shipment #AX234 is 18 mins behind schedule due to traffic.</p>
+                            <button class="w-full py-1.5 rounded bg-accent-red/10 border border-accent-red/30 text-accent-red text-xs hover:bg-accent-red hover:text-white transition-colors">
+                                Reroute Vehicle
+                            </button>
+                        </div>
+
+                        <!-- Alert Item 2 -->
+                        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 border-l-2 border-accent-yellow hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-xs font-bold text-slate-900 dark:text-white">Idle Alert</span>
+                                <span class="text-[10px] text-slate-500">14m ago</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Vehicle MH-04-1234 has been idle for 45 mins at Depot B.</p>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 py-1.5 rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-xs hover:bg-slate-50 dark:hover:bg-white hover:text-slate-900 transition-colors">Contact</button>
+                                <button class="flex-1 py-1.5 rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-xs hover:bg-slate-50 dark:hover:bg-white hover:text-slate-900 transition-colors">Logs</button>
+                            </div>
+                        </div>
+
+                         <!-- Alert Item 3 -->
+                         <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 border-l-2 border-brand-500 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-xs font-bold text-slate-900 dark:text-white">New Order</span>
+                                <span class="text-[10px] text-slate-500">1h ago</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">High-priority bulk order #9921 requiring approval.</p>
+                            <button class="w-full py-1.5 rounded bg-brand-500/10 border border-brand-500/30 text-brand-600 dark:text-brand-400 text-xs hover:bg-brand-500 hover:text-white transition-colors">
+                                Review Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. FLEET STATUS TABLE -->
+            <div class="glass-panel rounded-xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-200 dark:border-white/5 bg-white/50 dark:bg-slate-900/20 backdrop-blur-sm flex justify-between items-center">
+                    <h3 class="font-display font-semibold text-slate-900 dark:text-white tracking-wide">Fleet Overview</h3>
+                    <button class="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-white transition-colors">View All &rarr;</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-500 dark:text-slate-400">
+                        <thead class="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase font-medium text-slate-500 dark:text-slate-300">
+                            <tr>
+                                <th class="px-5 py-3 tracking-wider">Vehicle ID</th>
+                                <th class="px-5 py-3 tracking-wider">Driver</th>
+                                <th class="px-5 py-3 tracking-wider">Location</th>
+                                <th class="px-5 py-3 tracking-wider">Status</th>
+                                <th class="px-5 py-3 tracking-wider">ETA</th>
+                                <th class="px-5 py-3 tracking-wider text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700/50">
+                            <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                <td class="px-5 py-4 font-mono text-slate-900 dark:text-white">TX-42-992</td>
+                                <td class="px-5 py-4">
+                                    <div class="flex items-center">
+                                        <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 mr-2 flex items-center justify-center text-[10px] text-slate-700 dark:text-slate-300"> JD </div>
+                                        John Doe
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 text-xs">Route 66, Sector 4</td>
+                                <td class="px-5 py-4">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20">
+                                        On Time
+                                    </span>
+                                </td>
+                                <td class="px-5 py-4 font-mono text-xs">14:30 PM</td>
+                                <td class="px-5 py-4 text-right">
+                                    <button class="text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"><i class="fas fa-ellipsis-v"></i></button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                <td class="px-5 py-4 font-mono text-slate-900 dark:text-white">KA-19-221</td>
+                                <td class="px-5 py-4">
+                                    <div class="flex items-center">
+                                        <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 mr-2 flex items-center justify-center text-[10px] text-slate-700 dark:text-slate-300"> MS </div>
+                                        Mike Smith
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 text-xs">Industrial Area, Hub 2</td>
+                                <td class="px-5 py-4">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                                        Delayed
+                                    </span>
+                                </td>
+                                <td class="px-5 py-4 font-mono text-xs">16:45 PM</td>
+                                <td class="px-5 py-4 text-right">
+                                    <button class="text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"><i class="fas fa-ellipsis-v"></i></button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                <td class="px-5 py-4 font-mono text-slate-900 dark:text-white">MH-04-123</td>
+                                <td class="px-5 py-4">
+                                    <div class="flex items-center">
+                                        <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 mr-2 flex items-center justify-center text-[10px] text-slate-700 dark:text-slate-300"> SL </div>
+                                        Sarah Lee
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 text-xs">Depot B, Bay 4</td>
+                                <td class="px-5 py-4">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20">
+                                        Idle
+                                    </span>
+                                </td>
+                                <td class="px-5 py-4 font-mono text-xs">--:--</td>
+                                <td class="px-5 py-4 text-right">
+                                    <button class="text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"><i class="fas fa-ellipsis-v"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- Theme Management (Consistent with Login) ---
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const htmlElement = document.documentElement;
+
+        // Load Theme
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            htmlElement.classList.add('dark');
+        } else {
+            htmlElement.classList.remove('dark');
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            if (htmlElement.classList.contains('dark')) {
+                localStorage.theme = 'dark';
+            } else {
+                localStorage.theme = 'light';
+            }
+        });
+
+        // --- Sidebar Toggle Logic (New) ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            
+            // Toggle Translate class
+            if (sidebar.classList.contains('-translate-x-full')) {
+                // OPEN
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            } else {
+                // CLOSE
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+
+        // --- Profile Menu Toggle Logic (New) ---
+        function toggleProfileMenu() {
+            const menu = document.getElementById('profileMenu');
+            const notifMenu = document.getElementById('notificationMenu');
+            
+            // Close notifications if open
+            if (notifMenu && !notifMenu.classList.contains('hidden')) {
+                notifMenu.classList.add('hidden');
+            }
+
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                // Small animation for opening
+                menu.classList.add('animate-fade-in-up');
+                menu.style.animationDuration = '0.2s';
+            } else {
+                menu.classList.add('hidden');
+            }
+        }
+
+        // --- Notification Menu Toggle Logic (New) ---
+        function toggleNotifications() {
+            const menu = document.getElementById('notificationMenu');
+            const profileMenu = document.getElementById('profileMenu');
+            
+            // Close profile if open
+            if (profileMenu && !profileMenu.classList.contains('hidden')) {
+                profileMenu.classList.add('hidden');
+            }
+
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                menu.classList.add('animate-fade-in-up');
+                menu.style.animationDuration = '0.2s';
+            } else {
+                menu.classList.add('hidden');
+            }
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const profileMenu = document.getElementById('profileMenu');
+            const profileBtn = document.querySelector('button[onclick="toggleProfileMenu()"]');
+            
+            const notifMenu = document.getElementById('notificationMenu');
+            const notifBtn = document.querySelector('button[onclick="toggleNotifications()"]');
+            
+            // Close Profile Menu
+            if (profileMenu && !profileMenu.classList.contains('hidden') && !profileMenu.contains(event.target) && (!profileBtn || !profileBtn.contains(event.target))) {
+                profileMenu.classList.add('hidden');
+            }
+
+            // Close Notification Menu
+            if (notifMenu && !notifMenu.classList.contains('hidden') && !notifMenu.contains(event.target) && (!notifBtn || !notifBtn.contains(event.target))) {
+                notifMenu.classList.add('hidden');
+            }
+        });
+
+        // --- Mock Data Updates (Living Dashboard Feel) ---
+        // Occasionally flicker the "Active Shipments" number
+        setInterval(() => {
+            const random = Math.random();
+            if (random > 0.7) {
+                // Simulate small data update visually if we had IDs
+                // In a real app, this would use Websockets
+            }
+        }, 2000);
+
+        // --- Mouse Spotlight Effect Logic ---
+        document.querySelectorAll('.hover-glow-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+
+    </script>
+</body>
+</html>

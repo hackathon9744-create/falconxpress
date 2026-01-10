@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiSync | Live Fleet Map</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+
+        let previewRouteLine = null;
+let previewRouteMarkers = [];
+
+
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            400: '#22d3ee',
+                            500: '#06b6d4', // Cyan 500
+                            600: '#0891b2',
+                            900: '#0f172a', // Slate 900
+                            950: '#020617', // Slate 950
+                        },
+                        accent: {
+                            red: '#ef4444',
+                            yellow: '#eab308',
+                            green: '#22c55e',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in-up': 'fadeInUp 0.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    
+
+    <style>
+
+       
+
+        .driver-online {
+  filter: drop-shadow(0 0 10px rgba(34,197,94,0.9));
+}
+
+.driver-offline {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+
+        /* Shared Tech Background */
+        .tech-bg {
+            background-color: #0f172a;
+        }
+        html:not(.dark) .tech-bg {
+            background-color: #f1f5f9;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        html:not(.dark) .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(226, 232, 240, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .glass-sidebar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        html:not(.dark) .glass-sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-right: 1px solid rgba(203, 213, 225, 0.4);
+        }
+
+        /* Map Styling Overrides */
+        .leaflet-container {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a; /* Fallback */
+        }
+        
+        /* Custom Marker Icons */
+        .vehicle-marker {
+            transition: all 0.3s ease;
+        }
+        .marker-pin {
+            width: 30px;
+            height: 30px;
+            border-radius: 50% 50% 50% 0;
+            background: #06b6d4;
+            position: absolute;
+            transform: rotate(-45deg);
+            left: 50%;
+            top: 50%;
+            margin: -15px 0 0 -15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .marker-pin i {
+            transform: rotate(45deg);
+            color: white;
+            font-size: 12px;
+        }
+        
+        /* --- Enhanced Animations for Statuses --- */
+        
+        /* 1. Delayed - Rapid Red Flash (Urgent) */
+        @keyframes pulse-red-urgent {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); transform: rotate(-45deg) scale(1); }
+            50% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); transform: rotate(-45deg) scale(1.1); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: rotate(-45deg) scale(1); }
+        }
+        .status-delayed .marker-pin { 
+            background: #ef4444; 
+            animation: pulse-red-urgent 1s infinite; /* Fast flash */
+        }
+
+        /* 2. Active - Smooth Green Pulse (Normal) */
+        @keyframes pulse-green-smooth {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .status-active .marker-pin { 
+            background: #22c55e; 
+            animation: pulse-green-smooth 2s infinite; 
+        }
+
+        /* 3. Idle - Slow Yellow Breath (Waiting) */
+        @keyframes pulse-yellow-slow {
+            0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
+            50% { box-shadow: 0 0 0 6px rgba(234, 179, 8, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+        }
+        .status-idle .marker-pin { 
+            background: #eab308; 
+            animation: pulse-yellow-slow 3s infinite;
+        }
+
+        /* --- Custom Tooltip (Hover Dropdown) --- */
+        .vehicle-tooltip {
+            background-color: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 10px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        /* Remove default Leaflet triangle if preferred, or style it */
+        .vehicle-tooltip::before {
+            border-top-color: rgba(15, 23, 42, 0.95);
+        }
+        
+        /* Flashing Text Animation for Order ID */
+        @keyframes flash-text {
+            0%, 100% { opacity: 1; color: #ffffff; }
+            50% { opacity: 0.5; color: #94a3b8; }
+        }
+        .flash-id {
+            animation: flash-text 1s infinite linear;
+            color: #22d3ee; /* Cyan fallback */
+        }
+
+        /* Drawer Transition */
+        .drawer-panel {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    </style>
+</head>
+<body class="tech-bg text-slate-300 antialiased h-screen flex overflow-hidden selection:bg-brand-500 selection:text-white">
+
+    <!-- 2. SIDEBAR (Consistent with other pages) -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 glass-sidebar flex flex-col justify-between transition-transform duration-300 transform -translate-x-full lg:translate-x-0 lg:static">
+        <!-- Logo Area -->
+        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-700/50 dark:border-slate-700/50 border-slate-200">
+            <div class="flex items-center">
+                <div class="w-8 h-8 rounded bg-brand-500/20 flex items-center justify-center text-brand-600 dark:text-brand-400 mr-3">
+                    <i class="fas fa-cube"></i>
+                </div>
+                <span class="font-display font-bold text-lg text-slate-900 dark:text-white tracking-wide">
+                    Managers <span class="text-brand-600 dark:text-brand-500">Portal</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 py-6 space-y-1 overflow-y-auto">
+            <a href="#" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-th-large w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Dashboard</span>
+            </a>
+            <a href="#" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-truck w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Shipments</span>
+            </a>
+            
+            <!-- Fleet Map (Active) -->
+            <a href="#" class="flex items-center px-6 py-3 text-brand-600 dark:text-brand-400 bg-brand-500/10 border-r-2 border-brand-500 group relative">
+                <i class="fas fa-map-marked-alt w-6 text-center text-lg"></i>
+                <span class="ml-3 font-medium">Fleet Map</span>
+                <div class="absolute inset-0 bg-brand-400/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </a>
+
+            <a href="#" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-users w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Drivers</span>
+            </a>
+            <a href="#" class="flex items-center px-6 py-3 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-wallet w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Payments</span>
+            </a>
+            <a href="#" class="flex items-center px-6 py-3 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-chart-pie w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Analytics</span>
+            </a>
+            <a href="#" class="flex items-center px-6 py-3 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-leaf w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Carbon Footprint</span>
+            </a>
+            <a href="#" class="flex items-center px-6 py-3 text-slate-400 hover:text-slate-900 dark:hover:text-black hover:bg-slate-100 dark:hover:bg-white transition-colors group">
+                <i class="fas fa-file-invoice w-6 text-center text-lg group-hover:text-slate-900 dark:group-hover:text-black transition-colors"></i>
+                <span class="ml-3 font-medium">Documents</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <!-- TOP BAR -->
+        <header class="h-16 glass-panel border-b border-slate-200 dark:border-slate-700/50 flex items-center justify-between px-6 z-20 shrink-0 gap-4 absolute top-0 left-0 right-0">
+            <!-- Context -->
+            <div class="flex items-center space-x-4">
+                <button class="lg:hidden text-slate-500 dark:text-slate-400" onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full')">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <h2 class="font-display font-semibold text-lg text-slate-900 dark:text-white tracking-wide">Live Fleet Monitor</h2>
+                <span class="hidden md:flex items-center px-2.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-[10px] font-mono font-bold uppercase tracking-wider">
+                    <i class="fas fa-satellite-dish mr-2 animate-pulse"></i> GPS Active
+                </span>
+            </div>
+
+            <!-- Map Controls -->
+            <div class="flex items-center space-x-3">
+                <!-- Vehicle Filters -->
+<div class="flex items-center gap-2 ml-4 text-xs text-slate-600 dark:text-slate-300">
+  <label class="flex items-center gap-1 cursor-pointer">
+    <input type="checkbox" checked onchange="toggleVehicle('bike', this.checked)">
+    🏍
+  </label>
+  <label class="flex items-center gap-1 cursor-pointer">
+    <input type="checkbox" checked onchange="toggleVehicle('truck', this.checked)">
+    🚚
+  </label>
+  <label class="flex items-center gap-1 cursor-pointer">
+    <input type="checkbox" checked onchange="toggleVehicle('car', this.checked)">
+    🚗
+  </label>
+  <label class="flex items-center gap-1 cursor-pointer">
+    <input type="checkbox" checked onchange="toggleVehicle('ev', this.checked)">
+    ⚡
+  </label>
+</div>
+                <!-- Search Vehicles -->
+                <div class="relative hidden md:block">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="mapSearch" placeholder="Find vehicle..." class="w-48 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                </div>
+
+                <div class="h-6 w-px bg-slate-300 dark:bg-slate-700 mx-2"></div>
+
+                <!-- Theme Toggle (3-Way: Light / Dark / Satellite) -->
+                <button id="themeToggle" class="w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-brand-500 transition-all" title="Toggle Map Theme">
+                    <i class="fas fa-moon hidden dark:block text-xs" id="themeIcon"></i>
+                </button>
+                
+                <!-- Profile Dropdown (Updated) -->
+                <div class="relative pl-2">
+                    <button onclick="toggleProfileMenu()" class="flex items-center space-x-3 focus:outline-none group">
+                        <div class="text-right hidden md:block">
+                            <p class="text-xs font-medium text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">Alex Chen</p>
+                            <p class="text-[10px] text-brand-600 dark:text-brand-500 uppercase tracking-wider">Logistics Mgr</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-600 to-blue-600 p-[1px] shadow-sm group-hover:shadow-md transition-shadow">
+                            <div class="w-full h-full rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-white">AC</div>
+                        </div>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div id="profileMenu" class="hidden absolute right-0 mt-3 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none z-[1000] transform origin-top-right transition-all">
+                        <div class="py-2">
+                            <!-- User Info Header -->
+                            <div class="px-4 py-3 border-b border-slate-200 dark:border-white/10 mb-1">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Signed in as</p>
+                                <p class="text-sm font-medium text-slate-900 dark:text-white truncate">manager@logisync.com</p>
+                            </div>
+                            
+                            <!-- Menu Items -->
+                            <a href="#" class="group flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                                <i class="fas fa-id-card-alt mr-3 w-4 text-center text-slate-400 group-hover:text-brand-500 transition-colors"></i>
+                                Manager Details
+                            </a>
+                            <a href="#" class="group flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                                <i class="fas fa-cog mr-3 w-4 text-center text-slate-400 group-hover:text-brand-500 transition-colors"></i>
+                                Preferences
+                            </a>
+                            
+                            <div class="border-t border-slate-200 dark:border-white/10 my-1"></div>
+                            
+                            <button onclick="window.location.reload()" class="w-full text-left group flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                <i class="fas fa-sign-out-alt mr-3 w-4 text-center group-hover:text-red-600 dark:group-hover:text-red-400"></i>
+                                Log Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAP CONTAINER (Full Screen) -->
+        <main class="flex-1 relative bg-slate-900 z-0">
+            <div id="fleetMap" class="w-full h-full"></div>
+
+            <!-- Floating Status Legend -->
+            <div class="absolute bottom-6 left-6 z-[400] glass-panel p-3 rounded-lg flex flex-col space-y-2 w-40 shadow-xl">
+                <h4 class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">Fleet Status</h4>
+                <div class="flex items-center text-xs text-slate-700 dark:text-slate-300">
+                    <span class="w-2 h-2 rounded-full bg-green-500 mr-2 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span> Active (12)
+                </div>
+                <div class="flex items-center text-xs text-slate-700 dark:text-slate-300">
+                    <span class="w-2 h-2 rounded-full bg-yellow-500 mr-2"></span> Idle (4)
+                </div>
+                <div class="flex items-center text-xs text-slate-700 dark:text-slate-300">
+                    <span class="w-2 h-2 rounded-full bg-red-500 mr-2 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span> Delayed (2)
+                </div>
+            </div>
+        </main>
+
+        <!-- VEHICLE DETAIL DRAWER (Slide-in) -->
+        <div id="vehicleDrawer" class="drawer-panel fixed inset-y-0 right-0 w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 shadow-2xl z-[500] transform translate-x-full flex flex-col pt-16">
+            <!-- Content populated by JS -->
+            <div class="flex-1 p-5 overflow-y-auto">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 id="v-id" class="font-display text-xl font-bold text-slate-900 dark:text-white">--</h2>
+                        <p id="v-driver" class="text-sm text-slate-500">--</p>
+                    </div>
+                    <span id="v-badge" class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-200 text-slate-600">--</span>
+                </div>
+
+                <!-- Live Stats -->
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <p class="text-[10px] text-slate-500 uppercase">Speed</p>
+                        <p id="v-speed" class="text-lg font-mono font-bold text-brand-600 dark:text-brand-400">0 km/h</p>
+                    </div>
+                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <p class="text-[10px] text-slate-500 uppercase">Fuel</p>
+                        <div class="flex items-center mt-1">
+                            <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-green-500 h-full w-[75%]"></div>
+                            </div>
+                            <span class="text-xs ml-2 text-slate-600 dark:text-slate-300">75%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Shipment (Enhanced with Rich Icons) -->
+                <div class="mb-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div class="flex justify-between items-center mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <h3 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Active Manifest</h3>
+                        <span class="text-[10px] font-mono bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 px-2 py-0.5 rounded border border-brand-200 dark:border-brand-800">#SH-9921</span>
+                    </div>
+
+                    <!-- Cargo Details -->
+                    <div class="flex items-start mb-5">
+                        <div class="w-12 h-12 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-brand-600 dark:text-brand-400 mr-3 shrink-0 shadow-sm">
+                            <i class="fas fa-microchip text-xl"></i> <!-- Visual Context: Electronics -->
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-900 dark:text-white">Electronics Components</p>
+                            <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                                <span class="flex items-center text-[10px] text-slate-500 dark:text-slate-400" title="Weight"><i class="fas fa-weight-hanging mr-1.5 text-slate-400"></i> 1,200 kg</span>
+                                <span class="flex items-center text-[10px] text-slate-500 dark:text-slate-400" title="Quantity"><i class="fas fa-layer-group mr-1.5 text-slate-400"></i> 45 Pallets</span>
+                                <span class="flex items-center text-[10px] text-red-500 font-medium" title="Priority"><i class="fas fa-stopwatch mr-1.5"></i> High Priority</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Timeline -->
+                    <div class="relative pl-4 border-l-2 border-slate-200 dark:border-slate-700 ml-2 space-y-6">
+                        <!-- Origin -->
+                        <div class="relative group">
+                            <div class="absolute -left-[23px] top-0 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-700 flex items-center justify-center z-10 text-slate-400 group-hover:text-brand-500 transition-colors">
+                                <i class="fas fa-warehouse text-[10px]"></i>
+                            </div>
+                            <div class="ml-1">
+                                <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Origin</p>
+                                <p id="v-origin" class="text-xs font-bold text-slate-700 dark:text-slate-200">San Francisco, CA</p>
+                                <p class="text-[10px] text-slate-400">Hub: SF-TechPark-04</p>
+                            </div>
+                        </div>
+
+                        <!-- Current Status -->
+                        <div class="relative">
+                            <div class="absolute -left-[23px] top-0 w-6 h-6 rounded-full bg-brand-500 border-2 border-white dark:border-slate-900 flex items-center justify-center z-10 shadow-[0_0_10px_rgba(6,182,212,0.5)] animate-pulse">
+                                <i class="fas fa-truck-fast text-[10px] text-white"></i>
+                            </div>
+                            <div class="ml-1">
+                                <p class="text-[10px] text-brand-600 dark:text-brand-400 uppercase tracking-wider mb-0.5 font-bold">Current Status</p>
+                                <p class="text-xs font-bold text-brand-600 dark:text-brand-400">In Transit • On Schedule</p>
+                                <p class="text-[10px] text-slate-400">Interstate 5 South • 45mi to go</p>
+                            </div>
+                        </div>
+
+                        <!-- Destination -->
+                        <div class="relative group">
+                            <div class="absolute -left-[23px] top-0 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-700 flex items-center justify-center z-10 text-slate-400">
+                                <i class="fas fa-building text-[10px]"></i>
+                            </div>
+                            <div class="ml-1">
+                                <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Destination</p>
+                                <p id="v-dest" class="text-xs font-bold text-slate-700 dark:text-slate-200"></p>
+                                <p class="text-[10px] text-slate-400">Center: LA-Dist-09</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="space-y-2">
+                    <button class="w-full py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold shadow-lg shadow-brand-500/20 transition-all">
+                        View Shipment Details
+                    </button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium transition-all">
+                            <i class="fas fa-phone mr-1"></i> Contact
+                        </button>
+                        <button class="py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium transition-all">
+                            <i class="fas fa-route mr-1"></i> Reroute
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Close Handle -->
+            <button onclick="closeDrawer()" class="absolute top-20 right-4 w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+
+    const vehicleDestinations = {
+  "DRIVER-001": { lat: 34.0522, lng: -118.2437 },
+  "DRIVER-002": { lat: 37.7749, lng: -122.4194 },
+  "DRIVER-003": { lat: 28.6139, lng: 77.2090 }
+};
+        
+        let selectedVehicleId = null;
+         
+         const liveRoutes={};
+        
+        
+        
+   function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+function calculateETA(distanceKm, speedKmh = 40) {
+  if (speedKmh <= 0) return "—";
+  return Math.ceil((distanceKm / speedKmh) * 60);
+}
+        // --- 1. Map Initialization ---
+        // Center map roughly on California for demo
+        const map = L.map('fleetMap', {
+            zoomControl: false, 
+            attributionControl: false
+       }).setView([22.9734, 78.6569], 5);
+
+    const liveMarkers={};
+    const vehicleVisibility = {
+  bike: true,
+  truck: true,
+  car: true,
+  ev: true
+};
+
+// ===============================
+// WAREHOUSE LAYER (STATIC)
+// ===============================
+const warehouseLayer = L.layerGroup().addTo(map);
+// ===============================
+// PORT LAYER (STATIC)
+// ===============================
+const portLayer = L.layerGroup().addTo(map);
+
+async function loadWarehouses() {
+  try {
+   const res = await fetch("http://localhost:5000/api/warehouses");
+    const warehouses = await res.json();
+
+    warehouses.forEach(w => {
+      const icon = L.divIcon({
+        className: "warehouse-marker",
+        html: "🏭",
+        iconSize: [24, 24]
+      });
+
+      L.marker([w.lat, w.lng], { icon })
+        .addTo(warehouseLayer)
+        .bindPopup(`
+          <strong>${w.name}</strong><br/>
+          ${w.city}, ${w.state}<br/>
+          <small>${w.type}</small>
+        `);
+    });
+
+    console.log("🏭 Warehouses loaded:", warehouses.length);
+  } catch (err) {
+    console.error("Failed to load warehouses", err);
+  }
+}
+
+// ===============================
+// LOAD PORTS ON MAP
+// ===============================
+async function loadPorts() {
+  try {
+    const res = await fetch("http://localhost:5000/api/ports");
+    const ports = await res.json();
+
+    ports.forEach(p => {
+      const icon = L.divIcon({
+        className: "port-marker",
+        html: `<div style="
+          font-size:18px;
+          filter: drop-shadow(0 0 6px rgba(6,182,212,0.9));
+        ">⚓</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+
+      L.marker([p.lat, p.lng], { icon })
+        .addTo(portLayer)
+        .bindPopup(`
+          <strong>⚓ ${p.name}</strong><br/>
+          ${p.city}, ${p.state}<br/>
+          <small>${p.portId}</small>
+        `);
+    });
+
+    console.log("⚓ Ports loaded on map:", ports.length);
+  } catch (err) {
+    console.error("❌ Failed to load ports", err);
+  }
+}
+
+
+        // --- STEP 2: Backend Socket Connection ---
+    const socket = io("http://localhost:5000");
+
+    socket.on("connect", () => {
+    console.log("🟢 STEP 2 DONE: Map connected to backend", socket.id);
+    });
+
+
+    // ===============================
+// MANAGER OSRM ROUTE PREVIEW (REAL ROADS)
+// ===============================
+socket.on("manager:showRoute", data => {
+  const { geometry, origin, destination, distanceKm, durationMin } = data;
+  if (!geometry || geometry.length === 0) return;
+
+  // Convert OSRM coords [lng,lat] → [lat,lng]
+  const coords = geometry.map(([lng, lat]) => [lat, lng]);
+
+  // Clear previous preview
+  if (previewRouteLine) {
+    map.removeLayer(previewRouteLine);
+  }
+  previewRouteMarkers.forEach(m => map.removeLayer(m));
+  previewRouteMarkers = [];
+
+  // Draw OSRM route
+  previewRouteLine = L.polyline(coords, {
+    color: "#22d3ee",
+    weight: 6,
+    opacity: 0.95
+  }).addTo(map);
+
+  // Origin marker
+  previewRouteMarkers.push(
+    L.marker([origin.lat, origin.lng])
+      .addTo(map)
+      .bindPopup(`⚓ ${origin.name}`)
+  );
+
+  // Destination marker
+  previewRouteMarkers.push(
+    L.marker([destination.lat, destination.lng])
+      .addTo(map)
+      .bindPopup(`🏭 ${destination.name}`)
+  );
+
+  // Zoom to route
+  map.fitBounds(previewRouteLine.getBounds(), { padding: [80, 80] });
+
+  console.log(`🛣️ OSRM Route: ${distanceKm} km • ${durationMin} mins`);
+});
+
+    socket.on("disconnect", () => {
+    console.log("🔴 Map disconnected from backend");
+    });
+
+
+    function routeColor(status) {
+  if (status === "delayed") return "#ef4444"; // red
+  if (status === "idle") return "#eab308";    // yellow
+  return "#06b6d4";                           // cyan (active)
+    }
+
+    function fitMapToDrivers() {
+  const bounds = [];
+
+  Object.values(liveMarkers).forEach(marker => {
+    bounds.push(marker.getLatLng());
+  });
+
+  if (bounds.length > 1) {
+    map.fitBounds(bounds, { padding: [80, 80] });
+  }
+}
+    
+loadWarehouses();
+loadPorts();
+
+        // Add Zoom Control to bottom-right
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        // --- 2. Tile Layers (Dark/Light/Satellite) ---
+        const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 });
+        const lightTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 });
+        const satelliteTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 });
+
+        // Theme State: 'dark' | 'light' | 'satellite'
+        // Initial set based on html class
+        let currentMapTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        const htmlEl = document.documentElement;
+
+        // Function to apply theme
+        function applyMapTheme(theme) {
+            currentMapTheme = theme;
+            
+            // Remove all layers first
+            map.removeLayer(darkTiles);
+            map.removeLayer(lightTiles);
+            map.removeLayer(satelliteTiles);
+
+            // Add selected layer & update UI
+            const icon = document.getElementById('themeIcon');
+            const themeBtn = document.getElementById('themeToggle');
+
+            if (theme === 'dark') {
+                darkTiles.addTo(map);
+                htmlEl.classList.add('dark');
+                icon.className = 'fas fa-moon text-xs';
+            } else if (theme === 'light') {
+                lightTiles.addTo(map);
+                htmlEl.classList.remove('dark');
+                icon.className = 'fas fa-sun text-yellow-500 text-xs';
+            } else if (theme === 'satellite') {
+                satelliteTiles.addTo(map);
+                htmlEl.classList.add('dark'); // Keep UI dark overlay for satellite
+                icon.className = 'fas fa-globe-americas text-green-400 text-xs';
+            }
+        }
+
+        // Initialize
+        applyMapTheme(currentMapTheme);
+
+        // Toggle Logic (Cycle: Light -> Dark -> Satellite)
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            if (currentMapTheme === 'light') applyMapTheme('dark');
+            else if (currentMapTheme === 'dark') applyMapTheme('satellite');
+            else applyMapTheme('light');
+        });
+
+        /*// --- 3. Mock Vehicle Data ---
+        // Simulated vehicles with paths (Updated with orderId)
+        const vehicles = [
+            { 
+                id: 'VH-102', orderId: 'SH-9921', driver: 'Raj Kumar', status: 'active', lat: 37.7749, lng: -122.4194, 
+                dest: [34.0522, -118.2437], // SF -> LA
+                speed: 85, progress: 0.1 
+            },
+            { 
+                id: 'VH-099', orderId: 'SH-7713', driver: 'Sarah Lee', status: 'active', lat: 36.1699, lng: -115.1398, 
+                dest: [37.7749, -122.4194], // Vegas -> SF
+                speed: 92, progress: 0.3 
+            },
+            { 
+                id: 'VH-221', orderId: 'SH-8842', driver: 'Mike Smith', status: 'delayed', lat: 34.0522, lng: -118.2437, 
+                dest: [32.7157, -117.1611], // LA -> San Diego
+                speed: 0, progress: 0.05 
+            },
+            { 
+                id: 'VH-305', orderId: 'SH-6650', driver: 'John Doe', status: 'idle', lat: 38.5816, lng: -121.4944, 
+                dest: [38.5816, -121.4944], // Sacramento (Stationary)
+                speed: 0, progress: 0 
+            }
+        ];
+
+        const markers = {};
+        const polylines = {};
+        */
+
+        // Helper to create custom icons
+        function createVehicleIcon(status, vehicleType = "truck") {
+  let colorClass = "status-active";
+  let iconClass = "fa-truck";
+
+  // Status colors
+  if (status === "delayed") colorClass = "status-delayed";
+  if (status === "idle") colorClass = "status-idle";
+
+  // Vehicle icons
+  if (vehicleType === "bike") iconClass = "fa-motorcycle";
+  else if (vehicleType === "car") iconClass = "fa-car";
+  else if (vehicleType === "ev") iconClass = "fa-bolt";
+  else if (vehicleType === "truck") iconClass = "fa-truck";
+
+  return L.divIcon({
+    className: "custom-div-icon",
+    html: `
+      <div class="marker-pin ${colorClass}">
+        <i class="fas ${iconClass}"></i>
+      </div>
+    `,
+    iconSize: [30, 42],
+    iconAnchor: [15, 42]
+  });
+}
+
+        /*// Initialize Markers and Polylines
+        vehicles.forEach(v => {
+            // Draw Route Polyline
+            if (v.status !== 'idle') {
+                const line = L.polyline([[v.lat, v.lng], v.dest], {
+                    color: v.status === 'delayed' ? '#ef4444' : '#06b6d4',
+                    weight: 3,
+                    opacity: 0.6,
+                    dashArray: '5, 10',
+                    lineCap: 'round'
+                }).addTo(map);
+                polylines[v.id] = line;
+            }
+            
+
+            // Create Marker
+            const marker = L.marker([v.lat, v.lng], { icon: createIcon(v.status) }).addTo(map);
+            marker.vehicleData = v;
+            
+            // Add Flashing Hover Tooltip (Dropdown replacement)
+            marker.bindTooltip(
+                `<div class="flex items-center gap-1"><i class="fas fa-box-open text-[9px] text-slate-400"></i> <span class="flash-id">Order #${v.orderId}</span></div>`, 
+                {
+                    permanent: false, // Show on hover
+                    direction: 'top', 
+                    className: 'vehicle-tooltip',
+                    offset: [0, -18]
+                }
+            );
+            
+            // Click Event -> Open Drawer
+            marker.on('click', function() {
+                openDrawer(this.vehicleData);
+            });
+
+            markers[v.id] = marker;
+        });
+        */
+
+        // --- 5. Drawer UI Logic ---
+        function openDrawer(data) {
+            const drawer = document.getElementById('vehicleDrawer');
+            
+            // Populate Data
+            document.getElementById('v-id').innerText = data.id;
+            document.getElementById('v-driver').innerText =
+  data.driver || `Driver ${data.id}`;
+
+document.getElementById('v-speed').innerText =
+  (data.speed || 0) + ' km/h';
+            
+            const badge = document.getElementById('v-badge');
+            if (data.status === 'active') {
+                badge.className = "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800";
+                badge.innerText = "Active";
+            } else if (data.status === 'delayed') {
+                badge.className = "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800";
+                badge.innerText = "Delayed";
+            } else {
+                badge.className = "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800";
+                badge.innerText = "Idle";
+            }
+
+            drawer.classList.remove('translate-x-full');
+        }
+
+        function closeDrawer() {
+            document.getElementById('vehicleDrawer').classList.add('translate-x-full');
+        }
+
+        // --- Profile Menu Logic ---
+        function toggleProfileMenu() {
+            const menu = document.getElementById('profileMenu');
+            menu.classList.toggle('hidden');
+            if (!menu.classList.contains('hidden')) {
+                menu.classList.add('animate-fade-in-up');
+            }
+        }
+
+        // Close menus on click outside
+        document.addEventListener('click', function(event) {
+            const profileMenu = document.getElementById('profileMenu');
+            const profileBtn = document.querySelector('button[onclick="toggleProfileMenu()"]');
+            
+            if (profileMenu && !profileMenu.classList.contains('hidden') && !profileMenu.contains(event.target) && !profileBtn.contains(event.target)) {
+                profileMenu.classList.add('hidden');
+            }
+        });
+   socket.on("manager:driver-update", (driver) => {
+  const id = driver.driverId;
+  const latLng = [driver.lat, driver.lng];
+
+  
+ 
+
+  // Marker
+  if (!liveMarkers[id]) {
+    const marker = L.marker(latLng, {
+      icon: createVehicleIcon(driver.status = driver.speed > 5 ? "active" : "idle", driver.vehicleType || "truck")
+    }).addTo(map);
+
+    marker.vehicleType = driver.vehicleType || "truck";
+    liveMarkers[id] = marker;
+
+    marker.on("click", () => {
+      selectedVehicleId = id;
+      openDrawer(driver);
+    });
+  } else {
+    liveMarkers[id].setLatLng(latLng);
+  }
+
+  /* ===============================
+   🛣️ OSRM ROUTE DRAWING (STEP 4)
+=============================== */
+
+if (driver.route && driver.route.geometry) {
+  const routeCoords = driver.route.geometry.map(([lng, lat]) => [lat, lng]);
+
+  // Remove old route
+  if (liveRoutes[id]) {
+    map.removeLayer(liveRoutes[id]);
+  }
+
+  // Draw new OSRM route
+  liveRoutes[id] = L.polyline(routeCoords, {
+    color: "#06b6d4",
+    weight: 5,
+    opacity: 0.9
+  }).addTo(map);
+}
+
+  const el = liveMarkers[id].getElement();
+if (el) {
+  el.classList.remove("driver-offline");
+  el.classList.add("driver-online");
+}
+
+
+
+  applyVisibility(id);
+
+  if (!liveRoutes[id]) {
+  liveRoutes[id] = L.polyline([latLng], {
+    color: routeColor(driver.status),
+    weight: 4,
+    opacity: 0.8
+  }).addTo(map);
+} else {
+  const points = liveRoutes[id].getLatLngs();
+  points.push(latLng);
+  if (points.length > 150) points.shift();
+  liveRoutes[id].setLatLngs(points);
+}
+
+
+
+  // ETA
+  const dest = vehicleDestinations[id];
+  if (dest) {
+    const distanceKm = haversine(
+      driver.lat,
+      driver.lng,
+      dest.lat,
+      dest.lng
+    );
+
+    const eta = calculateETA(distanceKm, driver.speed || 40);
+
+    if (id === selectedVehicleId) {
+      document.getElementById("v-speed").innerText =
+        (driver.speed || 0) + " km/h";
+
+      document.getElementById("v-dest").innerText =
+        `${eta} mins remaining`;
+    }
+  }
+   fitMapToDrivers();
+});
+
+socket.on("manager:driver-offline", (driverId) => {
+  // remove marker
+  if (liveMarkers[driverId]) {
+    map.removeLayer(liveMarkers[driverId]);
+    delete liveMarkers[driverId];
+  }
+
+  // remove route
+  if (liveRoutes[driverId]) {
+    map.removeLayer(liveRoutes[driverId]);
+    delete liveRoutes[driverId];
+  }
+
+  // close drawer if selected
+  if (selectedVehicleId === driverId) {
+    closeDrawer();
+    selectedVehicleId = null;
+  }
+
+  console.log("❌ Driver offline:", driverId);
+});
+
+
+
+
+function toggleVehicle(type, visible) {
+  vehicleVisibility[type] = visible;
+
+  Object.keys(liveMarkers).forEach(id => {
+    applyVisibility(id);
+  });
+}
+
+function applyVisibility(id) {
+  const marker = liveMarkers[id];
+  if (!marker) return;
+
+  const type = marker.vehicleType;
+
+  if (vehicleVisibility[type]) {
+    marker.addTo(map);
+  } else {
+    map.removeLayer(marker);
+  }
+}
+
+    </script>
+</body>
+</html>

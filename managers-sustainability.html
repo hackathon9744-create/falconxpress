@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <script>
+        (function () {
+            try {
+                const token = localStorage.getItem("managerToken");
+                const role = localStorage.getItem("role");
+
+                if (!token || role !== "manager") {
+                    if (window.location.protocol === 'blob:' || window.location.protocol === 'data:') {
+                        console.warn("Preview mode detected: Setting mock auth.");
+                        localStorage.setItem("managerToken", "mock-preview-token");
+                        localStorage.setItem("role", "manager");
+                    }
+                }
+            } catch (e) {
+                console.warn("Auth script bypassed:", e);
+            }
+            
+            // Theme Init
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiSync | Carbon Footprint & Analytics</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Leaflet & Chart.js -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            900: '#0f172a',
+                        },
+                        eco: {
+                            400: '#4ade80', // Green 400
+                            500: '#22c55e', // Green 500
+                            600: '#16a34a', // Green 600
+                            900: '#14532d', // Green 900
+                        }
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.3s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Professional Background with Wind Turbine/Logistics Image Overlay */
+        .tech-bg {
+            background-color: #0f172a;
+            background-image: 
+                /* Gradient Overlay */
+                linear-gradient(to bottom, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)),
+                /* Real Image */
+                url('https://images.unsplash.com/photo-1466611653911-95081537e5b7?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            transition: background 0.3s ease;
+        }
+
+        html:not(.dark) .tech-bg {
+            background-color: #f8fafc;
+            background-image: 
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.95)),
+                url('https://images.unsplash.com/photo-1466611653911-95081537e5b7?q=80&w=2070&auto=format&fit=crop');
+        }
+        
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        html:not(.dark) .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .glass-sidebar {
+            background: rgba(15, 23, 42, 0.90);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.3s ease;
+        }
+
+        html:not(.dark) .glass-sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-right: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        
+        /* Form Inputs */
+        .tech-input {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.875rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        html:not(.dark) .tech-input {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(203, 213, 225, 1);
+            color: #1e293b;
+        }
+
+        .tech-input:focus {
+            border-color: #3b82f6; 
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        html:not(.dark) .tech-input:focus {
+            background: #ffffff;
+        }
+
+        .tech-label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            margin-bottom: 0.35rem;
+            font-weight: 600;
+        }
+
+        html:not(.dark) .tech-label {
+            color: #64748b;
+        }
+
+        /* Nav Text */
+        .nav-text-color {
+            color: #cbd5e1;
+        }
+        html:not(.dark) .nav-text-color {
+            color: #475569;
+        }
+    </style>
+</head>
+<body class="tech-bg text-slate-300 antialiased h-screen flex overflow-hidden selection:bg-blue-500 selection:text-white">
+
+    <!-- Mobile Backdrop -->
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-slate-900/80 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 glass-sidebar flex flex-col justify-between transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-300">
+        <!-- Logo -->
+        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-700/50 dark:border-slate-700/50 border-slate-200">
+            <div class="flex items-center">
+                <div class="w-8 h-8 rounded bg-blue-500/20 flex items-center justify-center text-blue-500 mr-3">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <span class="font-display font-bold text-lg text-slate-900 dark:text-white tracking-wide">
+                    Logi<span class="text-blue-500">Sync</span>
+                </span>
+            </div>
+            <button class="lg:hidden text-slate-500 hover:text-blue-500" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- Nav -->
+        <nav class="flex-1 py-6 space-y-1 overflow-y-auto">
+            <!-- 1. Dashboard -->
+            <a href="manager.html" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group">
+                <i class="fas fa-th-large w-6 text-center text-lg group-hover:text-blue-600 dark:group-hover:text-white"></i>
+                <span class="ml-3 font-medium">Dashboard</span>
+            </a>
+            
+            <!-- 2. Shipments -->
+            <a href="#" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group">
+                <i class="fas fa-truck w-6 text-center text-lg group-hover:text-blue-600 dark:group-hover:text-white"></i>
+                <span class="ml-3 font-medium">Shipments</span>
+            </a>
+
+            <!-- 3. Fleet Map -->
+            <a href="#" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group">
+                <i class="fas fa-map-marked-alt w-6 text-center text-lg group-hover:text-blue-600 dark:group-hover:text-white"></i>
+                <span class="ml-3 font-medium">Fleet Map</span>
+            </a>
+
+            <!-- 4. Drivers -->
+            <a href="drivers-map.html" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group">
+                <i class="fas fa-users w-6 text-center text-lg group-hover:text-blue-600 dark:group-hover:text-white"></i>
+                <span class="ml-3 font-medium">Drivers</span>
+            </a>
+
+            <!-- 5. Payments -->
+            <a href="#" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group">
+                <i class="fas fa-wallet w-6 text-center text-lg group-hover:text-blue-600 dark:group-hover:text-white"></i>
+                <span class="ml-3 font-medium">Payments</span>
+            </a>
+            
+            <!-- 6. Carbon Footprint (Active) -->
+            <a href="#" class="flex items-center px-6 py-3 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-r-2 border-blue-500 group relative">
+                <i class="fas fa-seedling w-6 text-center text-lg"></i>
+                <span class="ml-3 font-medium">Carbon Footprint</span>
+                <div class="absolute inset-0 bg-blue-400/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </a>
+            
+            <!-- 7. Documents -->
+             <a href="#" class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group">
+                <i class="fas fa-file-invoice w-6 text-center text-lg group-hover:text-blue-600 dark:group-hover:text-white"></i>
+                <span class="ml-3 font-medium">Documents</span>
+            </a>
+        </nav>
+
+        <!-- Bottom -->
+        <div class="p-4 border-t border-slate-200 dark:border-slate-700/50 space-y-2">
+            <button onclick="window.location.reload()" class="w-full flex items-center px-2 py-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors group">
+                <i class="fas fa-sign-out-alt w-6 text-center group-hover:text-red-500 dark:group-hover:text-red-400"></i>
+                <span class="ml-3 text-sm">Log Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <!-- Header -->
+        <header class="h-16 glass-panel border-b border-slate-200 dark:border-slate-700/50 flex items-center justify-between px-6 z-20 shrink-0">
+            <div class="flex items-center space-x-4">
+                <button class="lg:hidden text-slate-500 hover:text-blue-600 dark:hover:text-white" onclick="toggleSidebar()">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <h2 class="font-display font-semibold text-lg text-slate-900 dark:text-white tracking-wide">Carbon Footprint <span class="text-slate-500 font-normal ml-2 text-sm hidden sm:inline">| AI Emissions Model</span></h2>
+            </div>
+            
+            <!-- Right Actions -->
+            <div class="flex items-center space-x-4">
+                <!-- Theme Toggle -->
+                <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <i class="fas fa-moon hidden dark:block text-sm"></i>
+                    <i class="fas fa-sun dark:hidden text-sm text-amber-500"></i>
+                </button>
+
+                <!-- Profile Dropdown -->
+                <div class="relative pl-4 border-l border-slate-300 dark:border-slate-700 ml-2">
+                    <button onclick="toggleProfileMenu()" class="flex items-center space-x-3 focus:outline-none group">
+                        <div class="text-right hidden md:block">
+                            <p class="text-xs font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Alex Chen</p>
+                            <p class="text-[10px] text-blue-600 dark:text-blue-500 uppercase tracking-wider">Logistics Mgr</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-all">AC</div>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div id="profileMenu" class="hidden absolute right-0 mt-3 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 z-50 transform origin-top-right transition-all">
+                        <div class="py-1">
+                            <a href="#" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
+                                <i class="fas fa-user-circle mr-2 text-slate-400"></i> Profile
+                            </a>
+                            <a href="#" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
+                                <i class="fas fa-cog mr-2 text-slate-400"></i> Settings
+                            </a>
+                            <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+                            <button onclick="window.location.reload()" class="w-full text-left block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Dashboard Content -->
+        <main class="flex-1 overflow-y-auto p-6 scroll-smooth">
+
+            <!-- 1. KPI GRID -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total CO2 -->
+                <div class="glass-panel p-5 rounded-xl border-l-4 border-eco-500 relative overflow-hidden group">
+                    <div class="absolute right-2 top-2 p-2 bg-eco-500/10 rounded-lg text-eco-600 dark:text-eco-500">
+                        <i class="fas fa-cloud"></i>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider">Total Emissions</p>
+                    <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">42.8 <span class="text-sm font-normal text-slate-500 dark:text-slate-400">Tons</span></h3>
+                    <div class="flex items-center mt-2 text-xs">
+                        <span class="text-eco-600 dark:text-eco-400 flex items-center"><i class="fas fa-arrow-down mr-1"></i> 12%</span>
+                        <span class="text-slate-500 ml-2">vs last month</span>
+                    </div>
+                </div>
+                <!-- Avg CO2 -->
+                <div class="glass-panel p-5 rounded-xl border-l-4 border-blue-500 relative overflow-hidden group">
+                     <div class="absolute right-2 top-2 p-2 bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-500">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider">Avg CO₂ / Shipment</p>
+                    <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">18.5 <span class="text-sm font-normal text-slate-500 dark:text-slate-400">kg</span></h3>
+                     <div class="flex items-center mt-2 text-xs">
+                        <span class="text-eco-600 dark:text-eco-400 flex items-center"><i class="fas fa-arrow-down mr-1"></i> 2.4%</span>
+                        <span class="text-slate-500 ml-2">efficiency gain</span>
+                    </div>
+                </div>
+                 <!-- Fleet Score -->
+                <div class="glass-panel p-5 rounded-xl border-l-4 border-yellow-500 relative overflow-hidden group">
+                     <div class="absolute right-2 top-2 p-2 bg-yellow-500/10 rounded-lg text-yellow-600 dark:text-yellow-500">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider">Fleet Eco-Score</p>
+                    <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">A- <span class="text-sm font-normal text-slate-500 dark:text-slate-400">Rating</span></h3>
+                     <div class="flex items-center mt-2 text-xs">
+                        <span class="text-slate-500">Top 10% of industry</span>
+                    </div>
+                </div>
+                <!-- Optimization -->
+                <div class="glass-panel p-5 rounded-xl border-l-4 border-purple-500 relative overflow-hidden group">
+                     <div class="absolute right-2 top-2 p-2 bg-purple-500/10 rounded-lg text-purple-600 dark:text-purple-500">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider">Carbon Offset</p>
+                    <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">8.2 <span class="text-sm font-normal text-slate-500 dark:text-slate-400">Tons</span></h3>
+                     <div class="flex items-center mt-2 text-xs">
+                        <span class="text-eco-600 dark:text-eco-400 flex items-center"><i class="fas fa-check mr-1"></i> On Track</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 2. ANALYTICS: VERTICAL STACK -->
+            <div class="flex flex-col gap-6 mb-8">
+                
+                <!-- TOP: FULL WIDTH INPUT FORM -->
+                <div class="glass-panel rounded-xl p-6 border-t-4 border-blue-500 w-full animate-fade-in-up">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center">
+                            <i class="fas fa-sliders-h mr-3 text-blue-500"></i>Simulation Inputs
+                        </h3>
+                        <span class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-700 font-mono">Model: AI v1.6</span>
+                    </div>
+                    
+                    <form id="predictionForm" onsubmit="simulatePrediction(event)" class="space-y-6">
+                        <!-- Grid Layout: 4 Columns on Large Screens -->
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                            <!-- Input: Vehicle Type -->
+                            <div>
+                                <label class="tech-label">Vehicle Type</label>
+                                <select id="input_vehicle" class="tech-input">
+                                    <option value="hgv">HGV (Heavy)</option>
+                                    <option value="lcv">LCV (Light)</option>
+                                    <option value="van">Van</option>
+                                    <option value="truck">Truck</option>
+                                </select>
+                            </div>
+                            <!-- Input: Fuel Type -->
+                            <div>
+                                <label class="tech-label">Fuel Type</label>
+                                <select id="input_fuel" class="tech-input">
+                                    <option value="diesel">Diesel</option>
+                                    <option value="petrol">Petrol</option>
+                                    <option value="electric">Electric</option>
+                                    <option value="hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                            <!-- Input: Distance -->
+                            <div>
+                                <label class="tech-label">Distance (km)</label>
+                                <input type="number" id="input_distance" class="tech-input" value="150" min="1">
+                            </div>
+                            <!-- Input: Avg Speed -->
+                            <div>
+                                <label class="tech-label">Avg Speed (km/h)</label>
+                                <input type="number" id="input_speed" class="tech-input" value="65" min="1">
+                            </div>
+                            <!-- Input: Load Ratio -->
+                            <div>
+                                <label class="tech-label">Load Ratio (0-1)</label>
+                                <input type="number" id="input_load" class="tech-input" value="0.8" step="0.1" min="0" max="1">
+                            </div>
+                            <!-- Input: Stops -->
+                            <div>
+                                <label class="tech-label">Num Stops</label>
+                                <input type="number" id="input_stops" class="tech-input" value="3" min="0">
+                            </div>
+                            <!-- Input: Idle Time -->
+                            <div>
+                                <label class="tech-label">Idle Time (min)</label>
+                                <input type="number" id="input_idle" class="tech-input" value="15" min="0">
+                            </div>
+                            <!-- Submit Button (Occupies last slot) -->
+                            <div class="flex items-end">
+                                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex items-center justify-center h-[46px]">
+                                    <i class="fas fa-calculator mr-2"></i> Predict CO₂
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- MIDDLE: PREDICTED OUTPUT (Full Width Banner) -->
+                <div class="glass-panel rounded-xl p-8 flex flex-col md:flex-row items-center justify-between relative overflow-hidden animate-fade-in-up" style="animation-delay: 0.1s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-transparent to-transparent pointer-events-none"></div>
+                    
+                    <!-- Text Info -->
+                    <div class="z-10 text-center md:text-left mb-6 md:mb-0">
+                        <h4 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Estimated Carbon Footprint</h4>
+                        <div class="flex items-baseline gap-3 justify-center md:justify-start">
+                            <h2 id="resultValue" class="text-6xl font-display font-bold text-slate-900 dark:text-white tracking-tight">--</h2>
+                            <span class="text-2xl text-slate-500 font-medium">kg CO₂</span>
+                        </div>
+                        <div id="resultFeedback" class="mt-4 opacity-0 transition-opacity">
+                            <span class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                                Calculating...
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Large Gauge Visualization -->
+                    <div class="w-64 h-32 relative flex items-end justify-center">
+                        <svg class="w-64 h-32" viewBox="0 0 200 100">
+                            <!-- Background Arc -->
+                            <path class="text-slate-300 dark:text-slate-700" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="currentColor" stroke-width="15" stroke-linecap="round" />
+                            <!-- Value Arc -->
+                            <path id="gaugePath" class="text-blue-500 transition-all duration-1000 ease-out" stroke-dasharray="0, 251" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="currentColor" stroke-width="15" stroke-linecap="round" />
+                        </svg>
+                        <div class="absolute bottom-0 text-center pb-2">
+                            <span class="text-xs text-slate-500 uppercase tracking-wide">Impact Level</span>
+                            <div id="gaugeText" class="text-2xl font-bold text-slate-800 dark:text-white">--%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOTTOM: FEATURE SENSITIVITY CHART (Full Width) -->
+                <div class="glass-panel rounded-xl p-6 w-full animate-fade-in-up" style="animation-delay: 0.2s;">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h4 class="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-wider">Feature Sensitivity Analysis</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Relative impact of each input parameter on the predicted emissions.</p>
+                        </div>
+                        <span class="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded border border-slate-200 dark:border-slate-700">Live SHAP Values</span>
+                    </div>
+                    <div class="relative w-full h-[300px]">
+                        <canvas id="featureChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 3. SHIPMENT DATA (Preserved) -->
+            <div class="glass-panel rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/50 mb-8">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700/50 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+                    <h3 class="text-sm font-semibold text-slate-800 dark:text-white">Live Pipeline Data Stream</h3>
+                    <div class="flex gap-2">
+                        <span class="px-2 py-1 rounded bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-[10px] text-slate-600 dark:text-slate-400 flex items-center">
+                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2 animate-pulse"></span> AI Pipeline Active
+                        </span>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-100 dark:bg-slate-800/50 text-xs uppercase font-medium text-slate-500 dark:text-slate-400">
+                            <tr>
+                                <th class="px-6 py-3">Shipment ID</th>
+                                <th class="px-6 py-3">Vehicle / Fuel</th>
+                                <th class="px-6 py-3 text-right">Dist (km)</th>
+                                <th class="px-6 py-3 text-right">Avg Spd (km/h)</th>
+                                <th class="px-6 py-3 text-right">Load Ratio</th>
+                                <th class="px-6 py-3 text-right">Stops</th>
+                                <th class="px-6 py-3 text-right">Idle (min)</th>
+                                <th class="px-6 py-3 text-right text-slate-800 dark:text-white">Pred. CO₂</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700/50 text-sm text-slate-600 dark:text-slate-300 font-mono">
+                            <!-- Row 1 -->
+                            <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                <td class="px-6 py-4 text-blue-600 dark:text-blue-400">#TRK-8821</td>
+                                <td class="px-6 py-4">
+                                    <div class="text-slate-800 dark:text-white font-sans">HGV</div>
+                                    <div class="text-[10px] text-slate-500">Diesel</div>
+                                </td>
+                                <td class="px-6 py-4 text-right">450</td>
+                                <td class="px-6 py-4 text-right">72</td>
+                                <td class="px-6 py-4 text-right">0.95</td>
+                                <td class="px-6 py-4 text-right">4</td>
+                                <td class="px-6 py-4 text-right">45</td>
+                                <td class="px-6 py-4 text-right font-bold text-red-500 dark:text-red-400">385 kg</td>
+                            </tr>
+                            <!-- Row 2 -->
+                            <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                <td class="px-6 py-4 text-blue-600 dark:text-blue-400">#VAN-1044</td>
+                                <td class="px-6 py-4">
+                                    <div class="text-slate-800 dark:text-white font-sans">Van</div>
+                                    <div class="text-[10px] text-slate-500">Electric</div>
+                                </td>
+                                <td class="px-6 py-4 text-right">120</td>
+                                <td class="px-6 py-4 text-right">45</td>
+                                <td class="px-6 py-4 text-right">0.60</td>
+                                <td class="px-6 py-4 text-right">12</td>
+                                <td class="px-6 py-4 text-right">5</td>
+                                <td class="px-6 py-4 text-right font-bold text-eco-600 dark:text-eco-400">12 kg</td>
+                            </tr>
+                            <!-- Row 3 -->
+                            <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                <td class="px-6 py-4 text-blue-600 dark:text-blue-400">#LCV-9920</td>
+                                <td class="px-6 py-4">
+                                    <div class="text-slate-800 dark:text-white font-sans">LCV</div>
+                                    <div class="text-[10px] text-slate-500">Hybrid</div>
+                                </td>
+                                <td class="px-6 py-4 text-right">210</td>
+                                <td class="px-6 py-4 text-right">58</td>
+                                <td class="px-6 py-4 text-right">0.82</td>
+                                <td class="px-6 py-4 text-right">8</td>
+                                <td class="px-6 py-4 text-right">15</td>
+                                <td class="px-6 py-4 text-right font-bold text-yellow-600 dark:text-yellow-400">98 kg</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+
+        // Theme Toggle Logic
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+
+        // Profile Menu Logic
+        function toggleProfileMenu() {
+            const menu = document.getElementById('profileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close menu on click outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('profileMenu');
+            const button = document.querySelector('button[onclick="toggleProfileMenu()"]');
+            
+            if (menu && !menu.classList.contains('hidden') && !menu.contains(event.target) && !button.contains(event.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+       
+
+        // --- CHARTS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Feature Importance Chart (Full Width)
+            const ctx = document.getElementById('featureChart').getContext('2d');
+            
+            // Create a gradient for the bars
+            const gradient = ctx.createLinearGradient(0, 0, 600, 0); // Horizontal gradient
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.8)');   // Brand Blue (start)
+            gradient.addColorStop(1, 'rgba(34, 211, 238, 0.8)');   // Cyan (end) - gives a nice tech glow
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Distance Traveled', 'Vehicle Type', 'Load Ratio', 'Idle Time', 'Num Stops', 'Avg Speed'],
+                    datasets: [{
+                        label: 'Impact Score (F-Score)',
+                        data: [95, 80, 60, 45, 30, 25],
+                        backgroundColor: gradient,
+                        borderRadius: 4, // Slightly rounded corners
+                        borderSkipped: false, // Round all corners if possible, or just standard
+                        barThickness: 25, // Fixed thickness for elegance
+                        hoverBackgroundColor: '#fff', // Flash white on hover
+                        hoverShadow: '0 0 10px rgba(59, 130, 246, 0.5)' // Concept only, chartjs doesn't support shadow directly without plugins, but color change works.
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: '#e2e8f0',
+                            bodyColor: '#94a3b8',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `Impact: ${context.raw} (High Sensitivity)`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            display: true,
+                            grid: {
+                                color: 'rgba(100, 116, 139, 0.2)', // Lighter grid for visibility in light mode
+                                borderDash: [4, 4]
+                            },
+                            ticks: {
+                                color: '#64748b',
+                                font: { size: 10 }
+                            }
+                        },
+                        y: { 
+                            ticks: { 
+                                color: '#64748b', // Neutral slate for better visibility in both modes
+                                font: { size: 12, weight: '500', family: "'Inter', sans-serif" },
+                                padding: 10
+                            }, 
+                            grid: { display: false } 
+                        }
+                    },
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+
+            // Trigger initial calculation
+            document.querySelector('#predictionForm button').click();
+        });
+    </script>
+
+
+
+
+<script>
+const CARBON_API_URL = "http://localhost:8001";
+
+async function simulatePrediction(e) {
+  e.preventDefault();
+
+  // Collect inputs
+  const payload = {
+    distance_km: Number(document.getElementById("input_distance").value),
+    avg_speed_kmh: Number(document.getElementById("input_speed").value),
+    vehicle_type: document.getElementById("input_vehicle").value,
+    fuel_type: document.getElementById("input_fuel").value,
+    load_ratio: Number(document.getElementById("input_load").value),
+    num_stops: Number(document.getElementById("input_stops").value),
+    idle_time_min: Number(document.getElementById("input_idle").value)
+  };
+
+  try {
+    const res = await fetch(`${CARBON_API_URL}/predict-co2`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    const finalCO2 = data.predicted_co2_kg;
+
+    // Update number
+    document.getElementById("resultValue").innerText = finalCO2.toFixed(1);
+
+    // Gauge logic
+    const maxVal = 500;
+    const percent = Math.min(finalCO2 / maxVal, 1);
+    const dash = percent * 251;
+
+    const gaugePath = document.getElementById("gaugePath");
+    gaugePath.setAttribute("stroke-dasharray", `${dash}, 500`);
+    document.getElementById("gaugeText").innerText = Math.round(percent * 100) + "%";
+
+    // Risk feedback
+    const feedback = document.getElementById("resultFeedback");
+    feedback.classList.remove("opacity-0");
+
+    gaugePath.classList.remove("text-eco-400", "text-yellow-500", "text-red-500");
+
+    if (data.risk_level === "GREEN") {
+      gaugePath.classList.add("text-eco-400");
+      feedback.innerHTML = "🟢 Low Emission (Optimal)";
+    } else if (data.risk_level === "YELLOW") {
+      gaugePath.classList.add("text-yellow-500");
+      feedback.innerHTML = "🟡 Moderate Emission";
+    } else {
+      gaugePath.classList.add("text-red-500");
+      feedback.innerHTML = "🔴 High Emission Alert";
+    }
+
+  } catch (err) {
+    console.error("Prediction failed:", err);
+    alert("Carbon prediction failed. Check backend.");
+  }
+}   
+</script>
+
+
+</body>
+</html>
