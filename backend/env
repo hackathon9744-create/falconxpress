@@ -1,2 +1,0 @@
-MONGO_URI=mongodb+srv://logisyncAdmin:Bhumit9744@logisync-cluster.ihtofw1.mongodb.net/?appName=logisync-cluster
-JWT_SECRET=logisync_super_secret_key
