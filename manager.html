@@ -343,7 +343,9 @@
       localStorage.setItem("managerToken", data.token);
       localStorage.setItem("role", data.role);
 
-      window.location.href = "/manager-dashboard.html";
+     const BASE_PATH = window.location.pathname.split("/")[1];
+
+window.location.href = `/${BASE_PATH}/manager-dashboard.html`;
 
     } catch (err) {
       console.error(err);
@@ -354,6 +356,7 @@
 </body>
 
 </html>
+
 
 
 
