@@ -18,6 +18,8 @@ const app = express();
 ===================== */
 
 
+
+
 app.use(cors({
   origin: [
     "http://localhost:5500",
@@ -29,8 +31,6 @@ app.use(cors({
   credentials: true
 }));
 
-// VERY IMPORTANT — handle preflight
-app.options("*", cors());
 
 app.use(express.json());
 
@@ -190,4 +190,5 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🔥 Server running on port ${PORT}`);
 });
+
 
