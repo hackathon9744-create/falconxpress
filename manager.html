@@ -303,7 +303,10 @@
         })();
     </script>
    <script>
-  const API_URL = "https://falconxpress-1.onrender.com";
+ const API_URL =
+  window.location.hostname.includes("localhost")
+    ? "http://localhost:5000"
+    : "https://logisync-node-backend.onrender.com";
 
   async function loginManager(event) {
     event.preventDefault();
@@ -351,6 +354,7 @@
 </body>
 
 </html>
+
 
 
 
