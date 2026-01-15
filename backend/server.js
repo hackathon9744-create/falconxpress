@@ -16,18 +16,21 @@ const app = express();
 /* =====================
    Middleware
 ===================== */
-app.use(
-  cors({
-    origin: [
-      "https://falconxpress-1.onrender.com", // Render frontend
-      "http://localhost:5500",
-      "http://localhost:3000"
-    ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  })
-);
+
+
+app.use(cors({
+  origin: [
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "https://hackathon9744-create.github.io"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
+// VERY IMPORTANT — handle preflight
+app.options("*", cors());
 
 app.use(express.json());
 
@@ -56,11 +59,14 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://falconxpress-1.onrender.com",
-    methods: ["GET", "POST"]
+    origin: [
+      "http://localhost:5500",
+      "https://hackathon9744-create.github.io"
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
-
 /* =====================
    OSRM Helper
 ===================== */
@@ -184,3 +190,4 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🔥 Server running on port ${PORT}`);
 });
+
